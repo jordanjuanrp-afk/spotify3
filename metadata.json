@@ -1,0 +1,6 @@
+{
+  "name": "Player de Música",
+  "description": "Um player de música interativo e totalmente responsivo inspirado no visual do Spotify, com playlists brasileiras, sintetizador de áudio real e visualizadores em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
