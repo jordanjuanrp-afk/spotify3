@@ -1068,22 +1068,33 @@ export default function MainContent({
           >
             {/* Main image with liquid distortion */}
             <div className="relative aspect-square overflow-hidden bg-black">
-              <LiquidHover
-                imageSrc={lightboxTrack.cover}
-                resolution={10}
-                cursorSize={50}
-                intensity={50}
+              {/* Fallback cover image behind the liquid effect */}
+              <img
+                src={lightboxTrack.cover}
+                alt={lightboxTrack.title}
+                className="absolute inset-0 w-full h-full object-cover"
+                referrerPolicy="no-referrer"
               />
 
+              {/* Liquid distortion effect overlay */}
+              <div className="absolute inset-0 z-10">
+                <LiquidHover
+                  imageSrc={lightboxTrack.cover}
+                  resolution={10}
+                  cursorSize={50}
+                  intensity={50}
+                />
+              </div>
+
               {/* Track title overlay - bottom left like "CRY" in the image */}
-              <div className="absolute bottom-4 left-4 z-10">
+              <div className="absolute bottom-4 left-4 z-20">
                 <span className="text-white/90 text-sm font-bold tracking-widest uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                   {lightboxTrack.title}
                 </span>
               </div>
 
               {/* Vignette */}
-              <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.6)] pointer-events-none z-10" />
+              <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.6)] pointer-events-none z-20" />
             </div>
 
             {/* Info bar below image */}
