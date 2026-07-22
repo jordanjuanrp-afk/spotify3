@@ -6,8 +6,9 @@ import MainContent from "./components/MainContent";
 import PlayerBar from "./components/PlayerBar";
 import RightSidebar from "./components/RightSidebar";
 import LoginScreen from "./components/LoginScreen";
+import ProfilePage from "./components/ProfilePage";
 import { audioEngine } from "./audioEngine";
-import { Music2, Home, Search, Grid3X3 } from "lucide-react";
+import { Music2, Home, Search, Grid3X3, User } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
 import BackgroundBoxes from "./components/BackgroundBoxes";
 import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
@@ -59,7 +60,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "search" | "playlist" | "lyrics" | "gallery">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "search" | "playlist" | "lyrics" | "gallery" | "profile">("home");
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [activeRightSidebar, setActiveRightSidebar] = useState(true);
   const [showAddTrackModal, setShowAddTrackModal] = useState(false);
@@ -633,7 +634,7 @@ export default function App() {
             activeTab={activeTab}
             setActiveTab={(tab) => {
               setActiveTab(tab);
-              if (tab === "home" || tab === "search" || tab === "gallery") {
+              if (tab === "home" || tab === "search" || tab === "gallery" || tab === "profile") {
                 setCurrentPlaylistId(null);
               }
             }}
@@ -654,6 +655,16 @@ export default function App() {
             onRemoveTrack={handleRemoveTrack}
             onPlayPlaylist={handlePlayPlaylist}
           />
+
+          {activeTab === "profile" && (
+            <ProfilePage
+              userName={user.name}
+              userEmail={user.email}
+              allTracks={allTracks}
+              playlists={playlists}
+              onLogout={handleLogout}
+            />
+          )}
         </div>
 
         {activeRightSidebar && (
@@ -706,7 +717,7 @@ export default function App() {
           }`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Início</span>
+          <span className="text-[10px] font-semibold">Inicio</span>
         </button>
         <button
           onClick={() => {
@@ -738,6 +749,18 @@ export default function App() {
         >
           <Music2 className="w-5 h-5" />
           <span className="text-[10px] font-semibold">Adicionar</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("profile");
+            setCurrentPlaylistId(null);
+          }}
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === "profile" ? "text-white" : "text-zinc-500"
+          }`}
+        >
+          <User className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Perfil</span>
         </button>
       </nav>
 

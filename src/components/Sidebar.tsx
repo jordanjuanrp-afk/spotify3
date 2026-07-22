@@ -9,8 +9,8 @@ interface SidebarProps {
   onCreatePlaylist: (name: string, desc: string) => void;
   onOpenAddTrack: () => void;
   likedCount: number;
-  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery";
-  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery") => void;
+  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery" | "profile";
+  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery" | "profile") => void;
   isPlayingTrackId?: string;
   isAudioPlaying?: boolean;
   userName?: string;

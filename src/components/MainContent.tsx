@@ -25,8 +25,8 @@ import { Track, Playlist } from "../types";
 import LiquidHover from "./LiquidHover";
 
 interface MainContentProps {
-  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery";
-  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery") => void;
+  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery" | "profile";
+  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery" | "profile") => void;
   playlists: Playlist[];
   currentPlaylistId: string | null;
   onSelectPlaylist: (id: string | null) => void;
