@@ -1048,54 +1048,85 @@ export default function MainContent({
         </section>
       )}
 
-      {/* LIGHTBOX - Full image view */}
+      {/* LIGHTBOX - Full image view with cinematic red effect */}
       {lightboxTrack && (
         <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
           onClick={() => setLightboxTrack(null)}
         >
           <button
             onClick={() => setLightboxTrack(null)}
-            className="absolute top-4 right-4 text-white hover:text-zinc-300 transition cursor-pointer bg-zinc-800/80 hover:bg-zinc-700 rounded-full p-2"
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition cursor-pointer z-10"
           >
-            <X className="w-6 h-6" />
+            <X className="w-7 h-7" />
           </button>
 
           <div
-            className="bg-[#181818] rounded-xl overflow-hidden max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200"
+            className="relative max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Main image */}
             <div className="relative aspect-square overflow-hidden">
               <img
                 src={lightboxTrack.cover}
                 alt={lightboxTrack.title}
-                className="w-full h-full object-cover bg-zinc-800"
+                className="w-full h-full object-cover bg-zinc-900 scale-105"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-xs text-zinc-300 px-3 py-1.5 rounded font-semibold">
-                {lightboxTrack.album || lightboxTrack.synthGenre}
+
+              {/* Red cinematic overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-red-950/90 via-red-900/40 to-red-950/60 mix-blend-multiply" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
+
+              {/* Grain texture overlay */}
+              <div
+                className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")`,
+                  backgroundSize: "128px 128px",
+                }}
+              />
+
+              {/* Scanline effect */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-[0.03]"
+                style={{
+                  backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)",
+                }}
+              />
+
+              {/* Track title overlay - bottom left like "CRY" in the image */}
+              <div className="absolute bottom-4 left-4">
+                <span className="text-white/90 text-sm font-bold tracking-widest uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {lightboxTrack.title}
+                </span>
               </div>
+
+              {/* Vignette */}
+              <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.6)] pointer-events-none" />
             </div>
-            <div className="p-5 flex flex-col gap-2">
-              <h3 className="text-xl font-bold text-white">{lightboxTrack.title}</h3>
-              <p className="text-sm text-gray-400">{lightboxTrack.artist}</p>
-              <div className="flex items-center gap-3 mt-3">
+
+            {/* Info bar below image */}
+            <div className="bg-[#0a0a0a] p-4 flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">{lightboxTrack.artist}</p>
+                <p className="text-xs text-red-400/70 truncate mt-0.5">{lightboxTrack.album || lightboxTrack.synthGenre}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onToggleLiked(lightboxTrack.id)}
+                  className="text-zinc-400 hover:text-white transition p-2 cursor-pointer"
+                >
+                  <Heart className={`w-5 h-5 ${lightboxTrack.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                </button>
                 <button
                   onClick={() => {
                     onPlayTrack(lightboxTrack);
                     setLightboxTrack(null);
                   }}
-                  className="flex-1 bg-[#1db954] hover:bg-[#1ed760] text-black font-bold text-sm py-2.5 rounded-full flex items-center justify-center gap-2 transition cursor-pointer"
+                  className="bg-[#1db954] hover:bg-[#1ed760] text-black w-10 h-10 rounded-full flex items-center justify-center transition cursor-pointer shadow-lg"
                 >
-                  <Play className="w-5 h-5 fill-current" />
-                  <span>Ouvir</span>
-                </button>
-                <button
-                  onClick={() => onToggleLiked(lightboxTrack.id)}
-                  className="border border-zinc-700 hover:border-white text-sm font-bold px-4 py-2.5 rounded-full text-white transition cursor-pointer"
-                >
-                  <Heart className={`w-5 h-5 ${lightboxTrack.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                  <Play className="w-5 h-5 fill-current translate-x-0.5" />
                 </button>
               </div>
             </div>
