@@ -14,14 +14,6 @@ import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
 export default function App() {
   // Load initial data from localStorage if existing
   const [playlists, setPlaylists] = useState<Playlist[]>(() => {
-    // Reset old data only once using version flag
-    const currentVersion = 2;
-    const savedVersion = localStorage.getItem("spotify_clone_version");
-    if (savedVersion !== String(currentVersion)) {
-      localStorage.clear();
-      localStorage.setItem("spotify_clone_version", String(currentVersion));
-      return INITIAL_PLAYLISTS;
-    }
     const saved = localStorage.getItem("spotify_clone_playlists");
     return saved ? JSON.parse(saved) : INITIAL_PLAYLISTS;
   });
@@ -34,8 +26,11 @@ export default function App() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
     const saved = localStorage.getItem("spotify_clone_current_track");
     if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed;
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
     }
     return null;
   });
@@ -80,6 +75,10 @@ export default function App() {
   useEffect(() => {
     persistTracks(allTracks);
   }, [allTracks]);
+
+  useEffect(() => {
+    localStorage.setItem("spotify_clone_playlists", JSON.stringify(playlists));
+  }, [playlists]);
 
   useEffect(() => {
     if (currentTrack) {
