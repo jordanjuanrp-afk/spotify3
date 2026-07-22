@@ -19,6 +19,7 @@ import {
   Trash2,
   Grid3X3,
   LayoutList,
+  X,
 } from "lucide-react";
 import { Track, Playlist } from "../types";
 
@@ -65,6 +66,7 @@ export default function MainContent({
   // Custom playlist track search (to add tracks to custom playlists)
   const [customSearchQuery, setCustomSearchQuery] = useState("");
   const [playlistViewMode, setPlaylistViewMode] = useState<"list" | "gallery">("list");
+  const [lightboxTrack, setLightboxTrack] = useState<Track | null>(null);
 
   const activePlaylist = useMemo(() => {
     return playlists.find((p) => p.id === currentPlaylistId) || null;
@@ -338,12 +340,17 @@ export default function MainContent({
                     const isCurrent = currentTrack?.id === track.id;
                     const isThisPlaying = isCurrent && isPlaying;
                     return (
+                    <div
+                      key={track.id}
+                      className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
+                    >
                       <div
-                        key={track.id}
-                        onClick={() => onPlayTrack(track)}
-                        className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
+                        className="relative aspect-square overflow-hidden cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxTrack(track);
+                        }}
                       >
-                        <div className="relative aspect-square overflow-hidden">
                           <img
                             src={track.cover}
                             alt={track.title}
@@ -764,11 +771,16 @@ export default function MainContent({
                 return (
                   <div
                     key={track.id}
-                    onClick={() => onPlayTrack(track, activePlaylist.id)}
                     className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
                     id={`gallery-card-${track.id}`}
                   >
-                    <div className="relative aspect-square overflow-hidden">
+                    <div
+                      className="relative aspect-square overflow-hidden cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxTrack(track);
+                      }}
+                    >
                       <img
                         src={track.cover}
                         alt={track.title}
@@ -884,11 +896,16 @@ export default function MainContent({
                 return (
                   <div
                     key={track.id}
-                    onClick={() => onPlayTrack(track)}
                     className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
                     id={`gallery-all-${track.id}`}
                   >
-                    <div className="relative aspect-square overflow-hidden">
+                    <div
+                      className="relative aspect-square overflow-hidden cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxTrack(track);
+                      }}
+                    >
                       <img
                         src={track.cover}
                         alt={track.title}
@@ -1029,6 +1046,61 @@ export default function MainContent({
             </div>
           )}
         </section>
+      )}
+
+      {/* LIGHTBOX - Full image view */}
+      {lightboxTrack && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setLightboxTrack(null)}
+        >
+          <button
+            onClick={() => setLightboxTrack(null)}
+            className="absolute top-4 right-4 text-white hover:text-zinc-300 transition cursor-pointer bg-zinc-800/80 hover:bg-zinc-700 rounded-full p-2"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div
+            className="bg-[#181818] rounded-xl overflow-hidden max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative aspect-square overflow-hidden">
+              <img
+                src={lightboxTrack.cover}
+                alt={lightboxTrack.title}
+                className="w-full h-full object-cover bg-zinc-800"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent" />
+              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-xs text-zinc-300 px-3 py-1.5 rounded font-semibold">
+                {lightboxTrack.album || lightboxTrack.synthGenre}
+              </div>
+            </div>
+            <div className="p-5 flex flex-col gap-2">
+              <h3 className="text-xl font-bold text-white">{lightboxTrack.title}</h3>
+              <p className="text-sm text-gray-400">{lightboxTrack.artist}</p>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={() => {
+                    onPlayTrack(lightboxTrack);
+                    setLightboxTrack(null);
+                  }}
+                  className="flex-1 bg-[#1db954] hover:bg-[#1ed760] text-black font-bold text-sm py-2.5 rounded-full flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>Ouvir</span>
+                </button>
+                <button
+                  onClick={() => onToggleLiked(lightboxTrack.id)}
+                  className="border border-zinc-700 hover:border-white text-sm font-bold px-4 py-2.5 rounded-full text-white transition cursor-pointer"
+                >
+                  <Heart className={`w-5 h-5 ${lightboxTrack.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
