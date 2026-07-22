@@ -1,8 +1,6 @@
 import { Track, Playlist } from "./types";
 
-// Auto-detect API host: use same hostname as the page, fallback to localhost
-const API_HOST = window.location.hostname || "localhost";
-const API_BASE = `http://${API_HOST}:3001/api`;
+const API_BASE = import.meta.env.VITE_API_URL || `http://${window.location.hostname || "localhost"}:3001/api`;
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
