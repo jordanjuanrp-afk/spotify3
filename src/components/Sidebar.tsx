@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Home, Search, Library, Plus, Heart, Music, ListMusic, User, Volume2, Grid3X3 } from "lucide-react";
+import { Home, Search, Library, Plus, Heart, Music, ListMusic, User, Volume2, Grid3X3, ChevronUp, LogOut } from "lucide-react";
 import { Playlist } from "../types";
 
 interface SidebarProps {
@@ -32,6 +32,7 @@ export default function Sidebar({
   onLogout,
 }: SidebarProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
   const [playlistDesc, setPlaylistDesc] = useState("");
 
@@ -202,20 +203,45 @@ export default function Sidebar({
 
       {/* User Profile */}
       {userName && onLogout && (
-        <div className="bg-[#121212] rounded-lg p-3 flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#282828] rounded-full flex items-center justify-center shrink-0">
-            <User className="w-4 h-4 text-zinc-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{userName}</p>
-          </div>
+        <div className="relative">
           <button
-            onClick={onLogout}
-            title="Sair"
-            className="text-zinc-500 hover:text-white text-xs font-semibold transition cursor-pointer shrink-0 px-2 py-1 rounded hover:bg-[#282828]"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="bg-[#121212] rounded-lg p-3 flex items-center gap-3 w-full cursor-pointer hover:bg-[#1a1a1a] transition"
           >
-            Sair
+            <div className="w-9 h-9 bg-[#1db954] rounded-full flex items-center justify-center shrink-0">
+              <span className="text-black font-bold text-sm">{userName.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium text-white truncate">{userName}</p>
+            </div>
+            <ChevronUp className={`w-4 h-4 text-zinc-500 transition-transform ${showUserMenu ? "" : "rotate-180"}`} />
           </button>
+
+          {showUserMenu && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#282828] rounded-lg border border-[#3e3e3e] shadow-2xl overflow-hidden z-50">
+              <button
+                onClick={() => {
+                  onLogout();
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:bg-[#3e3e3e] hover:text-white transition cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair da conta</span>
+              </button>
+              <div className="h-px bg-[#3e3e3e]" />
+              <button
+                onClick={() => {
+                  onLogout();
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:bg-[#3e3e3e] hover:text-white transition cursor-pointer"
+              >
+                <User className="w-4 h-4" />
+                <span>Trocar de usuario</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
