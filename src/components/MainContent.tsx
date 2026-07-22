@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { Track, Playlist } from "../types";
+import LiquidHover from "./LiquidHover";
 
 interface MainContentProps {
   activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery";
@@ -1065,45 +1066,24 @@ export default function MainContent({
             className="relative max-w-lg w-full shadow-2xl animate-lightbox-in overflow-hidden rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Main image */}
-            <div className="relative aspect-square overflow-hidden">
-              <img
-                src={lightboxTrack.cover}
-                alt={lightboxTrack.title}
-                className="w-full h-full object-cover bg-zinc-900 scale-105"
-                referrerPolicy="no-referrer"
-              />
-
-              {/* Red cinematic overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-red-950/90 via-red-900/40 to-red-950/60 mix-blend-multiply" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
-
-              {/* Grain texture overlay */}
-              <div
-                className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")`,
-                  backgroundSize: "128px 128px",
-                }}
-              />
-
-              {/* Scanline effect */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                style={{
-                  backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)",
-                }}
+            {/* Main image with liquid distortion */}
+            <div className="relative aspect-square overflow-hidden bg-black">
+              <LiquidHover
+                imageSrc={lightboxTrack.cover}
+                resolution={10}
+                cursorSize={50}
+                intensity={50}
               />
 
               {/* Track title overlay - bottom left like "CRY" in the image */}
-              <div className="absolute bottom-4 left-4">
+              <div className="absolute bottom-4 left-4 z-10">
                 <span className="text-white/90 text-sm font-bold tracking-widest uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                   {lightboxTrack.title}
                 </span>
               </div>
 
               {/* Vignette */}
-              <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.6)] pointer-events-none" />
+              <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.6)] pointer-events-none z-10" />
             </div>
 
             {/* Info bar below image */}
