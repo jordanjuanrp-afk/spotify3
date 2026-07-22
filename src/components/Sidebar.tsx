@@ -15,6 +15,7 @@ interface SidebarProps {
   isAudioPlaying?: boolean;
   userName?: string;
   onLogout?: () => void;
+  onSwitchUser?: (name: string, email: string) => void;
 }
 
 export default function Sidebar({
@@ -30,9 +31,13 @@ export default function Sidebar({
   isAudioPlaying,
   userName,
   onLogout,
+  onSwitchUser,
 }: SidebarProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
   const [playlistName, setPlaylistName] = useState("");
   const [playlistDesc, setPlaylistDesc] = useState("");
 
@@ -221,13 +226,13 @@ export default function Sidebar({
             <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#282828] rounded-lg border border-[#3e3e3e] shadow-2xl overflow-hidden z-50">
               <button
                 onClick={() => {
-                  onLogout();
+                  setShowSwitchModal(true);
                   setShowUserMenu(false);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:bg-[#3e3e3e] hover:text-white transition cursor-pointer"
               >
-                <LogOut className="w-4 h-4" />
-                <span>Sair da conta</span>
+                <User className="w-4 h-4" />
+                <span>Trocar de usuario</span>
               </button>
               <div className="h-px bg-[#3e3e3e]" />
               <button
@@ -237,11 +242,75 @@ export default function Sidebar({
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:bg-[#3e3e3e] hover:text-white transition cursor-pointer"
               >
-                <User className="w-4 h-4" />
-                <span>Trocar de usuario</span>
+                <LogOut className="w-4 h-4" />
+                <span>Sair da conta</span>
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Switch User Modal */}
+      {showSwitchModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-md p-6 shadow-2xl animate-lightbox-in">
+            <h3 className="text-xl font-bold mb-1 text-white">Trocar de usuario</h3>
+            <p className="text-sm text-zinc-400 mb-5">Entre com os dados do novo usuario</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newUserName.trim() || !newUserEmail.trim()) return;
+                onSwitchUser?.(newUserName.trim(), newUserEmail.trim());
+                setShowSwitchModal(false);
+                setNewUserName("");
+                setNewUserEmail("");
+              }}
+              className="flex flex-col gap-4"
+            >
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-semibold mb-1 block">Nome</label>
+                <input
+                  type="text"
+                  required
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="Nome do novo usuario"
+                  className="w-full bg-[#2a2a2a] border border-[#3e3e3e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#1db954]"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-semibold mb-1 block">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                  className="w-full bg-[#2a2a2a] border border-[#3e3e3e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#1db954]"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSwitchModal(false);
+                    setNewUserName("");
+                    setNewUserEmail("");
+                  }}
+                  className="px-4 py-2 text-sm font-semibold hover:text-white text-gray-400 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#1db954] hover:bg-[#1ed760] text-black px-5 py-2 rounded-full font-bold text-sm cursor-pointer transition"
+                >
+                  Trocar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
