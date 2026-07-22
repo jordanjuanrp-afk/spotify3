@@ -61,6 +61,14 @@ export default function App() {
     setMouseRotate({ x, y });
   }, []);
 
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const x = ((touch.clientX / window.innerWidth) - 0.5) * 30;
+    const y = ((touch.clientY / window.innerHeight) - 0.5) * 30;
+    setMouseRotate({ x, y });
+  }, []);
+
   // References for visualizer
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -505,6 +513,7 @@ export default function App() {
       className="h-full w-full flex flex-col bg-black text-white overflow-hidden font-sans select-none"
       id="app-container"
       onMouseMove={handleMouseMove}
+      onTouchMove={handleTouchMove}
     >
       {/* Prism Grid Background */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">

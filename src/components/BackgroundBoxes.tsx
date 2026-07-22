@@ -145,7 +145,7 @@ export default function BackgroundBoxes({
   });
 
   return (
-    <div ref={containerRef} onPointerMove={handlePointerMove} onPointerLeave={leave} style={{ ...style, position: "relative", width: "100%", height: "100%", overflow: "hidden", backgroundColor }}>
+    <div ref={containerRef} style={{ ...style, position: "relative", width: "100%", height: "100%", overflow: "hidden", backgroundColor, pointerEvents: "none" }}>
       <div style={{ position: "absolute", inset: 0, perspective: `${PERSPECTIVE}px`, perspectiveOrigin: "center center", transformStyle: "preserve-3d" }}>
         <div style={{ transform: `translate(-50%, -50%) rotateY(${swingX}deg) rotateX(${swingY}deg)`, position: "absolute", left: "50%", top: "50%", display: "flex", flexDirection: "column", transformOrigin: "center center", width: `${gridWidth}px`, height: `${gridHeight}px`, zIndex: 0 }}>
           {boxes}
