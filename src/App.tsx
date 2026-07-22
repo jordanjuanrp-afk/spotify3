@@ -48,7 +48,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "search" | "playlist" | "lyrics">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "search" | "playlist" | "lyrics" | "gallery">("home");
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [activeRightSidebar, setActiveRightSidebar] = useState(true);
   const [showAddTrackModal, setShowAddTrackModal] = useState(false);

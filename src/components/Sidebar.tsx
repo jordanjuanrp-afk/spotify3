@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Home, Search, Library, Plus, Heart, Music, ListMusic, User, Volume2 } from "lucide-react";
+import { Home, Search, Library, Plus, Heart, Music, ListMusic, User, Volume2, Grid3X3 } from "lucide-react";
 import { Playlist } from "../types";
 
 interface SidebarProps {
@@ -9,8 +9,8 @@ interface SidebarProps {
   onCreatePlaylist: (name: string, desc: string) => void;
   onOpenAddTrack: () => void;
   likedCount: number;
-  activeTab: "home" | "search" | "playlist" | "lyrics";
-  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics") => void;
+  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery";
+  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery") => void;
   isPlayingTrackId?: string;
   isAudioPlaying?: boolean;
 }
@@ -74,6 +74,22 @@ export default function Sidebar({
         >
           <Search className="w-6 h-6" />
           <span>Buscar</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab("gallery");
+            onSelectPlaylist(null);
+          }}
+          className={`flex items-center gap-4 text-sm font-semibold transition cursor-pointer w-full text-left ${
+            activeTab === "gallery"
+              ? "text-white"
+              : "text-gray-400 hover:text-white"
+          }`}
+          id="nav-gallery"
+        >
+          <Grid3X3 className="w-6 h-6" />
+          <span>Galeria</span>
         </button>
       </div>
 

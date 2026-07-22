@@ -17,12 +17,14 @@ import {
   Volume2,
   Mic2,
   Trash2,
+  Grid3X3,
+  LayoutList,
 } from "lucide-react";
 import { Track, Playlist } from "../types";
 
 interface MainContentProps {
-  activeTab: "home" | "search" | "playlist" | "lyrics";
-  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics") => void;
+  activeTab: "home" | "search" | "playlist" | "lyrics" | "gallery";
+  setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery") => void;
   playlists: Playlist[];
   currentPlaylistId: string | null;
   onSelectPlaylist: (id: string | null) => void;
@@ -62,6 +64,7 @@ export default function MainContent({
 
   // Custom playlist track search (to add tracks to custom playlists)
   const [customSearchQuery, setCustomSearchQuery] = useState("");
+  const [playlistViewMode, setPlaylistViewMode] = useState<"list" | "gallery">("list");
 
   const activePlaylist = useMemo(() => {
     return playlists.find((p) => p.id === currentPlaylistId) || null;
@@ -610,10 +613,36 @@ export default function MainContent({
             ) : (
               <div className="text-sm text-zinc-500 italic">Adicione músicas abaixo para começar a tocar</div>
             )}
+            {playlistTracks.length > 0 && (
+              <div className="flex items-center bg-zinc-900 rounded-full p-1 ml-auto">
+                <button
+                  onClick={() => setPlaylistViewMode("list")}
+                  className={`p-2 rounded-full transition cursor-pointer ${
+                    playlistViewMode === "list"
+                      ? "bg-zinc-700 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  title="Visualização em lista"
+                >
+                  <LayoutList className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setPlaylistViewMode("gallery")}
+                  className={`p-2 rounded-full transition cursor-pointer ${
+                    playlistViewMode === "gallery"
+                      ? "bg-zinc-700 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  title="Visualização em galeria"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Tracks Table */}
-          {playlistTracks.length > 0 && (
+          {/* Tracks Table or Gallery */}
+          {playlistTracks.length > 0 && playlistViewMode === "list" && (
             <div className="flex flex-col" id="playlist-tracks-table">
               {/* Header */}
               <div className="grid grid-cols-[40px_1fr_1fr_80px] px-4 py-2 text-xs text-zinc-400 font-bold uppercase tracking-wider border-b border-zinc-800 mb-2">
@@ -701,6 +730,55 @@ export default function MainContent({
             </div>
           )}
 
+          {/* Gallery Grid View for Playlist */}
+          {playlistTracks.length > 0 && playlistViewMode === "gallery" && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+              {playlistTracks.map((track) => {
+                const isCurrent = currentTrack?.id === track.id;
+                const isThisPlaying = isCurrent && isPlaying;
+                return (
+                  <div
+                    key={track.id}
+                    onClick={() => onPlayTrack(track, activePlaylist.id)}
+                    className="bg-[#181818] hover:bg-zinc-800 rounded-lg p-4 cursor-pointer transition duration-300 group flex flex-col"
+                    id={`gallery-card-${track.id}`}
+                  >
+                    <div className="relative rounded overflow-hidden aspect-square mb-4 shadow-lg">
+                      <img
+                        src={track.cover}
+                        alt={track.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
+                        referrerPolicy="no-referrer"
+                      />
+                      {/* Play / Pause floating button */}
+                      <div className="absolute bottom-2 right-2">
+                        {isThisPlaying ? (
+                          <button className="w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl transition-all">
+                            <Volume2 className="w-6 h-6 text-black animate-pulse" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onPlayTrack(track, activePlaylist.id);
+                            }}
+                            className="w-12 h-12 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
+                          >
+                            <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
+                      {track.title}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Custom playlists can search and ADD new tracks! */}
           {activePlaylist.isCustom && (
             <div className="mt-8 border-t border-zinc-800 pt-6">
@@ -752,6 +830,90 @@ export default function MainContent({
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* GALLERY VIEW - All tracks as cover art grid */}
+      {activeTab === "gallery" && currentPlaylistId === null && (
+        <section className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Galeria</h2>
+            <span className="text-sm text-zinc-400">{allTracks.length} {allTracks.length === 1 ? "música" : "músicas"}</span>
+          </div>
+
+          {allTracks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+              {allTracks.map((track) => {
+                const isCurrent = currentTrack?.id === track.id;
+                const isThisPlaying = isCurrent && isPlaying;
+                return (
+                  <div
+                    key={track.id}
+                    onClick={() => onPlayTrack(track)}
+                    className="bg-[#181818] hover:bg-zinc-800 rounded-lg p-4 cursor-pointer transition duration-300 group flex flex-col"
+                    id={`gallery-all-${track.id}`}
+                  >
+                    <div className="relative rounded overflow-hidden aspect-square mb-4 shadow-lg">
+                      <img
+                        src={track.cover}
+                        alt={track.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
+                        referrerPolicy="no-referrer"
+                      />
+                      {/* Play / Pause floating button */}
+                      <div className="absolute bottom-2 right-2">
+                        {isThisPlaying ? (
+                          <button className="w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl transition-all">
+                            <Volume2 className="w-6 h-6 text-black animate-pulse" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onPlayTrack(track);
+                            }}
+                            className="w-12 h-12 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
+                          >
+                            <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
+                      {track.title}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleLiked(track.id);
+                        }}
+                        className="text-zinc-400 hover:text-white transition p-1 cursor-pointer"
+                      >
+                        <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveTrack(track.id);
+                        }}
+                        className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+              <Grid3X3 className="w-16 h-16 mb-4 opacity-40" />
+              <p className="text-lg font-semibold">Nenhuma música na galeria</p>
+              <p className="text-sm mt-1">Adicione músicas para vê-las aqui em formato galeria.</p>
             </div>
           )}
         </section>
