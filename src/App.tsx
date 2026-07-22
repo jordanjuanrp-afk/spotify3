@@ -67,8 +67,12 @@ export default function App() {
 
   // Helper to persist tracks to localStorage
   const persistTracks = (tracks: Track[]) => {
-    const tracksToSave = tracks.map(({ audioFile, ...rest }) => rest);
-    localStorage.setItem("spotify_clone_tracks", JSON.stringify(tracksToSave));
+    try {
+      const tracksToSave = tracks.map(({ audioFile, ...rest }) => rest);
+      localStorage.setItem("spotify_clone_tracks", JSON.stringify(tracksToSave));
+    } catch (err) {
+      console.error("Erro ao salvar tracks no localStorage:", err);
+    }
   };
 
   // Save states to local storage on change
@@ -77,12 +81,20 @@ export default function App() {
   }, [allTracks]);
 
   useEffect(() => {
-    localStorage.setItem("spotify_clone_playlists", JSON.stringify(playlists));
+    try {
+      localStorage.setItem("spotify_clone_playlists", JSON.stringify(playlists));
+    } catch (err) {
+      console.error("Erro ao salvar playlists no localStorage:", err);
+    }
   }, [playlists]);
 
   useEffect(() => {
     if (currentTrack) {
-      localStorage.setItem("spotify_clone_current_track", JSON.stringify(currentTrack));
+      try {
+        localStorage.setItem("spotify_clone_current_track", JSON.stringify(currentTrack));
+      } catch (err) {
+        console.error("Erro ao salvar currentTrack no localStorage:", err);
+      }
     }
   }, [currentTrack]);
 
