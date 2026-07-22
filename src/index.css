@@ -65,3 +65,52 @@
 .animate-fade-in {
   animation: fade-in 0.25s ease-out forwards;
 }
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
+  #left-sidebar {
+    display: none !important;
+  }
+
+  #app-container > .relative > .flex-1 {
+    padding-bottom: 0;
+  }
+
+  .player-bar-desktop {
+    display: none;
+  }
+
+  .right-sidebar-desktop {
+    display: none;
+  }
+
+  .sintetizador-badge {
+    display: none;
+  }
+}
+
+/* Tablet (min-width: 768px) and (max-width: 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #left-sidebar {
+    width: 220px;
+  }
+
+  .right-sidebar-desktop {
+    display: none;
+  }
+
+  .sintetizador-badge {
+    display: none;
+  }
+}
+
+/* Desktop (min-width: 1024px) */
+@media (min-width: 1024px) {
+  #left-sidebar {
+    width: 256px;
+  }
+}
