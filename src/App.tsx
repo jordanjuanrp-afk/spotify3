@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { INITIAL_PLAYLISTS, INITIAL_TRACKS } from "./data";
 import { Playlist, Track } from "./types";
 import Sidebar from "./components/Sidebar";
@@ -8,6 +8,7 @@ import RightSidebar from "./components/RightSidebar";
 import { audioEngine } from "./audioEngine";
 import { Music2, Home, Search, Grid3X3 } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
+import BackgroundBoxes from "./components/BackgroundBoxes";
 import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
 
 export default function App() {
@@ -55,6 +56,15 @@ export default function App() {
 
   // Keep track of the active queue context
   const [playlistContextId, setPlaylistContextId] = useState<string | null>(null);
+
+  // Mouse position for prism grid effect
+  const [mouseRotate, setMouseRotate] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const x = ((e.clientX / window.innerWidth) - 0.5) * 30;
+    const y = ((e.clientY / window.innerHeight) - 0.5) * 30;
+    setMouseRotate({ x, y });
+  }, []);
 
   // References for visualizer
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -480,7 +490,33 @@ export default function App() {
   const isCurrentTrackLiked = currentTrack ? allTracks.find((t) => t.id === currentTrack.id)?.liked || false : false;
 
   return (
-    <div className="h-full w-full flex flex-col bg-black text-white overflow-hidden font-sans select-none" id="app-container">
+    <div
+      className="h-full w-full flex flex-col bg-black text-white overflow-hidden font-sans select-none"
+      id="app-container"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Prism Grid Background */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <BackgroundBoxes
+          backgroundColor="transparent"
+          boxSize={35}
+          borderWidth={1}
+          borderColor="rgba(255,255,255,0.08)"
+          rotate={mouseRotate}
+          colors={{
+            paletteCount: 6,
+            color1: "#1db954",
+            color2: "#1ed760",
+            color3: "#ffffff",
+            color4: "#535353",
+            color5: "#b3b3b3",
+            color6: "#121212",
+          }}
+        />
+      </div>
+
+      {/* Content layer */}
+      <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
       {/* Top Section: Sidebars & Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0 p-1 sm:p-2 gap-1 sm:gap-2">
         <Sidebar
@@ -640,6 +676,7 @@ export default function App() {
           onClose={() => setShowAddTrackModal(false)}
         />
       )}
+      </div>
     </div>
   );
 }
