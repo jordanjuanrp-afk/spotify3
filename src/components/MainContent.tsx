@@ -318,59 +318,88 @@ export default function MainContent({
             </section>
           )}
 
-          {/* Pre-save section */}
+          {/* Gallery section - User's tracks */}
           {filterType !== "podcasts" && (
             <section className="mt-2">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Pré-salve os próximos lançamentos</h2>
-                <button className="text-zinc-400 hover:text-white font-bold text-xs transition">Mostrar tudo</button>
+                <h2 className="text-2xl font-bold text-white">Sua Galeria</h2>
+                {allTracks.length > 4 && (
+                  <button
+                    onClick={() => setActiveTab("gallery")}
+                    className="text-zinc-400 hover:text-white font-bold text-xs transition cursor-pointer"
+                  >
+                    Mostrar tudo
+                  </button>
+                )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {upcomingReleases.map((album) => {
-                  const hasSaved = preSaved[album.id];
-                  return (
-                    <div
-                      key={album.id}
-                      className="bg-[#181818] hover:bg-zinc-900 rounded-lg p-4 transition duration-300 group flex flex-col border border-zinc-900"
-                    >
-                      <div className="relative rounded overflow-hidden aspect-square mb-4">
-                        <img
-                          src={album.cover}
-                          alt={album.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-[10px] text-zinc-300 px-2 py-1 rounded font-semibold">
-                          Lançamento: {album.date}
+              {allTracks.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {allTracks.slice(0, 8).map((track) => {
+                    const isCurrent = currentTrack?.id === track.id;
+                    const isThisPlaying = isCurrent && isPlaying;
+                    const hasSaved = preSaved[track.id];
+                    return (
+                      <div
+                        key={track.id}
+                        onClick={() => onPlayTrack(track)}
+                        className="bg-[#181818] hover:bg-zinc-900 rounded-lg p-4 transition duration-300 group flex flex-col border border-zinc-900 cursor-pointer"
+                      >
+                        <div className="relative rounded overflow-hidden aspect-square mb-4">
+                          <img
+                            src={track.cover}
+                            alt={track.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
+                            referrerPolicy="no-referrer"
+                          />
+                          {/* Floating play / now playing indicator */}
+                          <div className="absolute bottom-2 right-2">
+                            {isThisPlaying ? (
+                              <button className="w-10 h-10 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl">
+                                <Volume2 className="w-5 h-5 text-black animate-pulse" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onPlayTrack(track);
+                                }}
+                                className="w-10 h-10 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
+                              >
+                                <Play className="w-5 h-5 fill-current translate-x-0.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <h3 className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>{track.title}</h3>
+                        <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
+
+                        <div className="flex items-center gap-2 mt-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleLiked(track.id);
+                            }}
+                            className="text-zinc-400 hover:text-white transition p-1 cursor-pointer"
+                          >
+                            <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveTrack(track.id);
+                            }}
+                            className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      <h3 className="text-sm font-bold text-white truncate">{album.title}</h3>
-                      <p className="text-xs text-gray-400 truncate mt-1">{album.artist}</p>
-
-                      <button
-                        onClick={() => handlePreSave(album.id, album.title)}
-                        className={`mt-4 w-full text-xs font-bold py-2 rounded-full cursor-pointer flex items-center justify-center gap-1.5 transition-all ${
-                          hasSaved
-                            ? "bg-zinc-800 text-green-400 border border-green-500/20"
-                            : "bg-white text-black hover:bg-zinc-200"
-                        }`}
-                      >
-                        {hasSaved ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Pré-salvo!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Pré-salvar</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-500 italic">Adicione músicas para vê-las aqui.</p>
+              )}
             </section>
           )}
 
