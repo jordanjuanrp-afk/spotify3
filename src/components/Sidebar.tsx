@@ -13,6 +13,8 @@ interface SidebarProps {
   setActiveTab: (tab: "home" | "search" | "playlist" | "lyrics" | "gallery") => void;
   isPlayingTrackId?: string;
   isAudioPlaying?: boolean;
+  userName?: string;
+  onLogout?: () => void;
 }
 
 export default function Sidebar({
@@ -26,6 +28,8 @@ export default function Sidebar({
   setActiveTab,
   isPlayingTrackId,
   isAudioPlaying,
+  userName,
+  onLogout,
 }: SidebarProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
@@ -195,6 +199,25 @@ export default function Sidebar({
             })}
         </div>
       </div>
+
+      {/* User Profile */}
+      {userName && onLogout && (
+        <div className="bg-[#121212] rounded-lg p-3 flex items-center gap-3">
+          <div className="w-9 h-9 bg-[#282828] rounded-full flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-zinc-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{userName}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            title="Sair"
+            className="text-zinc-500 hover:text-white text-xs font-semibold transition cursor-pointer shrink-0 px-2 py-1 rounded hover:bg-[#282828]"
+          >
+            Sair
+          </button>
+        </div>
+      )}
 
       {/* Create Playlist Modal Dialog */}
       {showCreateModal && (

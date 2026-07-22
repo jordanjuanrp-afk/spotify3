@@ -5,23 +5,38 @@ import Sidebar from "./components/Sidebar";
 import MainContent from "./components/MainContent";
 import PlayerBar from "./components/PlayerBar";
 import RightSidebar from "./components/RightSidebar";
+import LoginScreen from "./components/LoginScreen";
 import { audioEngine } from "./audioEngine";
 import { Music2, Home, Search, Grid3X3 } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
 import BackgroundBoxes from "./components/BackgroundBoxes";
 import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
+import {
+  fetchTracks,
+  fetchPlaylists,
+  createTrack,
+  updateTrack,
+  deleteTrack,
+  createPlaylist,
+  updatePlaylist,
+} from "./api";
 
 export default function App() {
-  // Load initial data from localStorage if existing
-  const [playlists, setPlaylists] = useState<Playlist[]>(() => {
-    const saved = localStorage.getItem("spotify_clone_playlists");
-    return saved ? JSON.parse(saved) : INITIAL_PLAYLISTS;
+  const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
+    const saved = localStorage.getItem("spotify_clone_user");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
   });
 
-  const [allTracks, setAllTracks] = useState<Track[]>(() => {
-    const saved = localStorage.getItem("spotify_clone_tracks");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [playlists, setPlaylists] = useState<Playlist[]>(INITIAL_PLAYLISTS);
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
     const saved = localStorage.getItem("spotify_clone_current_track");
@@ -48,11 +63,7 @@ export default function App() {
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [activeRightSidebar, setActiveRightSidebar] = useState(true);
   const [showAddTrackModal, setShowAddTrackModal] = useState(false);
-
-  // Keep track of the active queue context
   const [playlistContextId, setPlaylistContextId] = useState<string | null>(null);
-
-  // Mouse position for prism grid effect
   const [mouseRotate, setMouseRotate] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -69,23 +80,65 @@ export default function App() {
     setMouseRotate({ x, y });
   }, []);
 
-  // References for visualizer
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Helper to persist tracks to localStorage
-  const persistTracks = (tracks: Track[]) => {
+  const handleLogin = (name: string, email: string) => {
+    const userData = { name, email };
+    setUser(userData);
+    localStorage.setItem("spotify_clone_user", JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    audioEngine.pause();
+    setUser(null);
+    localStorage.removeItem("spotify_clone_user");
+  };
+
+  // Load data from server on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [tracks, playlistsData] = await Promise.all([
+          fetchTracks().catch(() => []),
+          fetchPlaylists().catch(() => INITIAL_PLAYLISTS),
+        ]);
+        setAllTracks(tracks);
+        setPlaylists(playlistsData.length > 0 ? playlistsData : INITIAL_PLAYLISTS);
+      } catch (err) {
+        console.error("Erro ao carregar dados do servidor:", err);
+      } finally {
+        setDataLoaded(true);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Polling: sync new tracks every 5 seconds
+  useEffect(() => {
+    if (!dataLoaded) return;
+    const interval = setInterval(async () => {
+      try {
+        const [tracks, playlistsData] = await Promise.all([
+          fetchTracks().catch(() => null),
+          fetchPlaylists().catch(() => null),
+        ]);
+        if (tracks) setAllTracks(tracks);
+        if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
+      } catch {
+        // silent fail
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [dataLoaded]);
+
+  useEffect(() => {
     try {
-      const tracksToSave = tracks.map(({ audioFile, ...rest }) => rest);
+      const tracksToSave = allTracks.map(({ audioFile, ...rest }) => rest);
       localStorage.setItem("spotify_clone_tracks", JSON.stringify(tracksToSave));
     } catch (err) {
       console.error("Erro ao salvar tracks no localStorage:", err);
     }
-  };
-
-  // Save states to local storage on change
-  useEffect(() => {
-    persistTracks(allTracks);
   }, [allTracks]);
 
   useEffect(() => {
@@ -111,12 +164,10 @@ export default function App() {
     audioEngine.setVolume(volume, isMuted);
   }, [volume, isMuted]);
 
-  // Synchronized playback ticker
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (isPlaying && currentTrack) {
       interval = setInterval(() => {
-        // Use media element time for uploaded files
         const mediaEl = audioEngine.getMediaElement();
         if (audioEngine.isUsingUploadedFile() && mediaEl) {
           const currentTime = Math.floor(mediaEl.currentTime);
@@ -142,14 +193,74 @@ export default function App() {
     };
   }, [isPlaying, currentTrack, shuffle, repeat, playlistContextId]);
 
-  // Handle Play/Pause actions
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const analyser = audioEngine.getAnalyser();
+
+    const draw = () => {
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      if (!analyser || !isPlaying) {
+        ctx.strokeStyle = "#22c55e";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        for (let i = 0; i < width; i++) {
+          const y = height / 2 + Math.sin(i * 0.08) * 3;
+          ctx.lineTo(i, y);
+        }
+        ctx.stroke();
+        animationFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      const barWidth = (width / bufferLength) * 2.2;
+      let barHeight;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i] / 2;
+        const hue = (i / bufferLength) * 120 + 110;
+        ctx.fillStyle = `hsla(${hue}, 85%, 55%, 0.85)`;
+        const yPos = height - barHeight;
+        ctx.fillRect(x, yPos, barWidth - 1.5, barHeight);
+        x += barWidth;
+      }
+
+      animationFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   const handlePlayPause = async () => {
     if (!currentTrack) return;
     if (isPlaying) {
       audioEngine.pause();
       setIsPlaying(false);
     } else {
-      // Reload audio from IndexedDB if needed
       const audioData = await getAudioFile(currentTrack.id);
       const trackToPlay = audioData ? { ...currentTrack, audioFile: audioData } : currentTrack;
       audioEngine.play(trackToPlay);
@@ -157,14 +268,12 @@ export default function App() {
     }
   };
 
-  // Play a specific track
   const handlePlayTrack = async (track: Track, fromPlaylistId?: string) => {
     audioEngine.pause();
     setCurrentTrack(track);
     setProgress(0);
     setIsPlaying(true);
 
-    // Check if track has uploaded audio in IndexedDB
     const audioData = await getAudioFile(track.id);
     const trackToPlay = audioData ? { ...track, audioFile: audioData } : track;
     audioEngine.play(trackToPlay);
@@ -176,7 +285,6 @@ export default function App() {
     }
   };
 
-  // Play an entire playlist from the beginning
   const handlePlayPlaylist = (playlist: Playlist) => {
     let tracksList = playlist.tracks;
     if (playlist.id === "liked-songs") {
@@ -192,11 +300,9 @@ export default function App() {
     }
   };
 
-  // Go to next track in queue/playlist
   const handleNextTrack = async () => {
     if (!currentTrack) return;
 
-    // Get current tracklist context
     let activeTrackIds: string[] = [];
     if (playlistContextId) {
       if (playlistContextId === "liked-songs") {
@@ -206,7 +312,6 @@ export default function App() {
         if (pl) activeTrackIds = pl.tracks;
       }
     } else {
-      // Default fallback to all tracks
       activeTrackIds = allTracks.map((t) => t.id);
     }
 
@@ -234,7 +339,6 @@ export default function App() {
     }
   };
 
-  // Go to previous track
   const handlePreviousTrack = () => {
     if (!currentTrack) return;
 
@@ -268,12 +372,9 @@ export default function App() {
 
   const handleProgressChange = (newProgress: number) => {
     setProgress(newProgress);
-    // If playing, we can notify engine if timeline seeks are needed
-    // Our custom procedural sequencer schedules relative notes based on clock, so we just reset target
   };
 
-  // Create custom playlist
-  const handleCreatePlaylist = (name: string, description?: string) => {
+  const handleCreatePlaylist = async (name: string, description?: string) => {
     const newPlaylist: Playlist = {
       id: `custom-${Date.now()}`,
       name,
@@ -285,40 +386,61 @@ export default function App() {
     setPlaylists((prev) => [...prev, newPlaylist]);
     setCurrentPlaylistId(newPlaylist.id);
     setActiveTab("playlist");
+    try {
+      await createPlaylist(newPlaylist);
+    } catch (err) {
+      console.error("Erro ao salvar playlist no servidor:", err);
+    }
   };
 
-  // Add/remove track to custom playlist
-  const handleAddTrackToPlaylist = (playlistId: string, trackId: string) => {
+  const handleAddTrackToPlaylist = async (playlistId: string, trackId: string) => {
+    let updatedPlaylist: Playlist | null = null;
     setPlaylists((prev) =>
       prev.map((p) => {
         if (p.id === playlistId) {
           if (!p.tracks.includes(trackId)) {
-            return { ...p, tracks: [...p.tracks, trackId] };
+            updatedPlaylist = { ...p, tracks: [...p.tracks, trackId] };
+            return updatedPlaylist;
           }
         }
         return p;
       })
     );
+    if (updatedPlaylist) {
+      try {
+        await updatePlaylist(playlistId, updatedPlaylist);
+      } catch (err) {
+        console.error("Erro ao atualizar playlist no servidor:", err);
+      }
+    }
   };
 
-  const handleRemoveTrackFromPlaylist = (playlistId: string, trackId: string) => {
+  const handleRemoveTrackFromPlaylist = async (playlistId: string, trackId: string) => {
+    let updatedPlaylist: Playlist | null = null;
     setPlaylists((prev) =>
       prev.map((p) => {
         if (p.id === playlistId) {
-          return { ...p, tracks: p.tracks.filter((id) => id !== trackId) };
+          updatedPlaylist = { ...p, tracks: p.tracks.filter((id) => id !== trackId) };
+          return updatedPlaylist;
         }
         return p;
       })
     );
+    if (updatedPlaylist) {
+      try {
+        await updatePlaylist(playlistId, updatedPlaylist);
+      } catch (err) {
+        console.error("Erro ao atualizar playlist no servidor:", err);
+      }
+    }
   };
 
-  // Toggle Liked status
-  const handleToggleLiked = (trackId: string) => {
+  const handleToggleLiked = async (trackId: string) => {
+    let updatedTrack: Track | null = null;
     setAllTracks((prevTracks) =>
       prevTracks.map((t) => {
         if (t.id === trackId) {
           const updatedLiked = !t.liked;
-          // Synchronize virtual "liked-songs" playlist
           setPlaylists((prevPlaylists) =>
             prevPlaylists.map((p) => {
               if (p.id === "liked-songs") {
@@ -333,28 +455,29 @@ export default function App() {
               return p;
             })
           );
-          return { ...t, liked: updatedLiked };
+          updatedTrack = { ...t, liked: updatedLiked };
+          return updatedTrack;
         }
         return t;
       })
     );
 
-    // Update currentTrack instance liked state if it's the one modified
     if (currentTrack?.id === trackId) {
       setCurrentTrack((prev) => (prev ? { ...prev, liked: !prev.liked } : null));
     }
+
+    if (updatedTrack) {
+      try {
+        await updateTrack(trackId, { liked: updatedTrack.liked });
+      } catch (err) {
+        console.error("Erro ao atualizar like no servidor:", err);
+      }
+    }
   };
 
-  // Add a new custom track
-  const handleAddTrack = (trackData: Omit<Track, "id">, audioFile?: File) => {
+  const handleAddTrack = async (trackData: Omit<Track, "id">, audioFile?: File) => {
     const newId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const newTrack: Track = { ...trackData, id: newId };
-
-    const finalize = (tracks: Track[]) => {
-      setAllTracks(tracks);
-      persistTracks(tracks);
-      setActiveTab("search");
-    };
 
     if (audioFile) {
       const reader = new FileReader();
@@ -364,34 +487,31 @@ export default function App() {
         } catch (err) {
           console.error("Erro ao salvar áudio:", err);
         }
-        setAllTracks((prev) => {
-          const updated = [...prev, newTrack];
-          persistTracks(updated);
-          return updated;
-        });
+        setAllTracks((prev) => [...prev, newTrack]);
         setActiveTab("search");
+        try {
+          await createTrack({ ...newTrack, audioFile: undefined });
+        } catch (err) {
+          console.error("Erro ao enviar track para o servidor:", err);
+        }
       };
       reader.onerror = () => {
         console.error("Erro ao ler arquivo");
-        setAllTracks((prev) => {
-          const updated = [...prev, newTrack];
-          persistTracks(updated);
-          return updated;
-        });
+        setAllTracks((prev) => [...prev, newTrack]);
         setActiveTab("search");
       };
       reader.readAsDataURL(audioFile);
     } else {
-      setAllTracks((prev) => {
-        const updated = [...prev, newTrack];
-        persistTracks(updated);
-        return updated;
-      });
+      setAllTracks((prev) => [...prev, newTrack]);
       setActiveTab("search");
+      try {
+        await createTrack(newTrack);
+      } catch (err) {
+        console.error("Erro ao enviar track para o servidor:", err);
+      }
     }
   };
 
-  // Add multiple tracks at once (batch upload)
   const handleAddBatch = async (batch: Array<{ track: Omit<Track, "id">; audioFile?: File }>) => {
     const newTracks: Track[] = [];
 
@@ -415,21 +535,20 @@ export default function App() {
       }
     }
 
-    setAllTracks((prev) => {
-      const updated = [...prev, ...newTracks];
-      persistTracks(updated);
-      return updated;
-    });
+    setAllTracks((prev) => [...prev, ...newTracks]);
     setActiveTab("search");
+
+    for (const track of newTracks) {
+      try {
+        await createTrack({ ...track, audioFile: undefined });
+      } catch (err) {
+        console.error("Erro ao enviar track para o servidor:", err);
+      }
+    }
   };
 
-  // Remove a track from library
   const handleRemoveTrack = async (trackId: string) => {
-    setAllTracks((prev) => {
-      const updated = prev.filter((t) => t.id !== trackId);
-      persistTracks(updated);
-      return updated;
-    });
+    setAllTracks((prev) => prev.filter((t) => t.id !== trackId));
     await deleteAudioFile(trackId).catch(() => {});
     if (currentTrack?.id === trackId) {
       audioEngine.pause();
@@ -437,73 +556,12 @@ export default function App() {
       setIsPlaying(false);
       setProgress(0);
     }
+    try {
+      await deleteTrack(trackId);
+    } catch (err) {
+      console.error("Erro ao deletar track no servidor:", err);
+    }
   };
-
-  // Real-time Canvas sound visualizer logic
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const analyser = audioEngine.getAnalyser();
-
-    const draw = () => {
-      const width = canvas.width;
-      const height = canvas.height;
-
-      ctx.clearRect(0, 0, width, height);
-
-      if (!analyser || !isPlaying) {
-        // Draw static wave line when paused
-        ctx.strokeStyle = "#22c55e";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        for (let i = 0; i < width; i++) {
-          const y = height / 2 + Math.sin(i * 0.08) * 3;
-          ctx.lineTo(i, y);
-        }
-        ctx.stroke();
-        animationFrameRef.current = requestAnimationFrame(draw);
-        return;
-      }
-
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyser.getByteFrequencyData(dataArray);
-
-      // Render a gorgeous audio frequency bar spectrum
-      const barWidth = (width / bufferLength) * 2.2;
-      let barHeight;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i] / 2;
-
-        // Custom gradient color based on frequency
-        const hue = (i / bufferLength) * 120 + 110; // green to blue hues
-        ctx.fillStyle = `hsla(${hue}, 85%, 55%, 0.85)`;
-
-        // Draw rounded bars
-        const yPos = height - barHeight;
-        ctx.fillRect(x, yPos, barWidth - 1.5, barHeight);
-
-        x += barWidth;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [isPlaying]);
 
   const likedCount = allTracks.filter((t) => t.liked).length;
   const isCurrentTrackLiked = currentTrack ? allTracks.find((t) => t.id === currentTrack.id)?.liked || false : false;
@@ -515,7 +573,6 @@ export default function App() {
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
     >
-      {/* Prism Grid Background */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <BackgroundBoxes
           backgroundColor="transparent"
@@ -535,9 +592,7 @@ export default function App() {
         />
       </div>
 
-      {/* Content layer */}
       <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-      {/* Top Section: Sidebars & Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0 p-1 sm:p-2 gap-1 sm:gap-2">
         <Sidebar
           playlists={playlists}
@@ -562,12 +617,12 @@ export default function App() {
           }}
           isPlayingTrackId={currentTrack?.id}
           isAudioPlaying={isPlaying}
+          userName={user.name}
+          onLogout={handleLogout}
         />
 
-        {/* Center Main panel + small visualizer overlay */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#121212] rounded-lg overflow-hidden relative">
           
-          {/* Animated Wave visualizer bar integrated in the top background */}
           <div className="absolute top-2 right-4 w-40 h-10 pointer-events-none z-30 opacity-70 flex items-center gap-2">
             <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">SINTETIZADOR</span>
             <canvas ref={canvasRef} width={120} height={32} className="w-30 h-8 rounded" />
@@ -600,7 +655,6 @@ export default function App() {
           />
         </div>
 
-        {/* Right Sidebar */}
         {activeRightSidebar && (
           <RightSidebar
             currentTrack={currentTrack}
@@ -610,7 +664,6 @@ export default function App() {
         )}
       </div>
 
-      {/* Bottom Audio Player bar */}
       <PlayerBar
         currentTrack={currentTrack}
         isPlaying={isPlaying}
@@ -641,7 +694,6 @@ export default function App() {
         onToggleRightSidebar={() => setActiveRightSidebar((prev) => !prev)}
       />
 
-      {/* Mobile Bottom Navigation - visible only on small screens */}
       <nav className="md:hidden flex items-center justify-around bg-[#121212] border-t border-zinc-900 px-2 py-1.5 shrink-0">
         <button
           onClick={() => {
@@ -688,7 +740,6 @@ export default function App() {
         </button>
       </nav>
 
-      {/* Add Track Modal */}
       {showAddTrackModal && (
         <AddTrackModal
           onAdd={handleAddTrack}
