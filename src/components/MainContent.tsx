@@ -337,21 +337,26 @@ export default function MainContent({
                   {allTracks.slice(0, 8).map((track) => {
                     const isCurrent = currentTrack?.id === track.id;
                     const isThisPlaying = isCurrent && isPlaying;
-                    const hasSaved = preSaved[track.id];
                     return (
                       <div
                         key={track.id}
                         onClick={() => onPlayTrack(track)}
-                        className="bg-[#181818] hover:bg-zinc-900 rounded-lg p-4 transition duration-300 group flex flex-col border border-zinc-900 cursor-pointer"
+                        className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
                       >
-                        <div className="relative rounded overflow-hidden aspect-square mb-4">
+                        <div className="relative aspect-square overflow-hidden">
                           <img
                             src={track.cover}
                             alt={track.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
                             referrerPolicy="no-referrer"
                           />
-                          {/* Floating play / now playing indicator */}
+                          {/* Dark gradient overlay at bottom */}
+                          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent" />
+                          {/* Badge */}
+                          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[10px] text-zinc-300 px-2 py-1 rounded font-semibold">
+                            {track.album || track.synthGenre}
+                          </div>
+                          {/* Floating play / now playing */}
                           <div className="absolute bottom-2 right-2">
                             {isThisPlaying ? (
                               <button className="w-10 h-10 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl">
@@ -370,27 +375,18 @@ export default function MainContent({
                             )}
                           </div>
                         </div>
-                        <h3 className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>{track.title}</h3>
-                        <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
-
-                        <div className="flex items-center gap-2 mt-3">
+                        <div className="p-3 flex flex-col gap-1">
+                          <h3 className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>{track.title}</h3>
+                          <p className="text-xs text-gray-400 truncate">{track.artist}</p>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onToggleLiked(track.id);
+                              onPlayTrack(track);
                             }}
-                            className="text-zinc-400 hover:text-white transition p-1 cursor-pointer"
+                            className="mt-2 w-full text-xs font-bold py-2 rounded-full cursor-pointer flex items-center justify-center gap-1.5 bg-white text-black hover:bg-zinc-200 transition-all"
                           >
-                            <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRemoveTrack(track.id);
-                            }}
-                            className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Ouvir</span>
                           </button>
                         </div>
                       </div>
@@ -769,21 +765,27 @@ export default function MainContent({
                   <div
                     key={track.id}
                     onClick={() => onPlayTrack(track, activePlaylist.id)}
-                    className="bg-[#181818] hover:bg-zinc-800 rounded-lg p-4 cursor-pointer transition duration-300 group flex flex-col"
+                    className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
                     id={`gallery-card-${track.id}`}
                   >
-                    <div className="relative rounded overflow-hidden aspect-square mb-4 shadow-lg">
+                    <div className="relative aspect-square overflow-hidden">
                       <img
                         src={track.cover}
                         alt={track.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
                         referrerPolicy="no-referrer"
                       />
-                      {/* Play / Pause floating button */}
+                      {/* Dark gradient overlay at bottom */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent" />
+                      {/* Badge */}
+                      <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[10px] text-zinc-300 px-2 py-1 rounded font-semibold">
+                        {track.album || track.synthGenre}
+                      </div>
+                      {/* Floating play / now playing */}
                       <div className="absolute bottom-2 right-2">
                         {isThisPlaying ? (
-                          <button className="w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl transition-all">
-                            <Volume2 className="w-6 h-6 text-black animate-pulse" />
+                          <button className="w-10 h-10 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl">
+                            <Volume2 className="w-5 h-5 text-black animate-pulse" />
                           </button>
                         ) : (
                           <button
@@ -791,17 +793,19 @@ export default function MainContent({
                               e.stopPropagation();
                               onPlayTrack(track, activePlaylist.id);
                             }}
-                            className="w-12 h-12 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
+                            className="w-10 h-10 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
                           >
-                            <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                            <Play className="w-5 h-5 fill-current translate-x-0.5" />
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
-                      {track.title}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
+                    <div className="p-3 flex flex-col gap-1">
+                      <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
+                        {track.title}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                    </div>
                   </div>
                 );
               })}
@@ -881,21 +885,27 @@ export default function MainContent({
                   <div
                     key={track.id}
                     onClick={() => onPlayTrack(track)}
-                    className="bg-[#181818] hover:bg-zinc-800 rounded-lg p-4 cursor-pointer transition duration-300 group flex flex-col"
+                    className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
                     id={`gallery-all-${track.id}`}
                   >
-                    <div className="relative rounded overflow-hidden aspect-square mb-4 shadow-lg">
+                    <div className="relative aspect-square overflow-hidden">
                       <img
                         src={track.cover}
                         alt={track.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500 bg-zinc-800"
                         referrerPolicy="no-referrer"
                       />
-                      {/* Play / Pause floating button */}
+                      {/* Dark gradient overlay at bottom */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent" />
+                      {/* Badge */}
+                      <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[10px] text-zinc-300 px-2 py-1 rounded font-semibold">
+                        {track.album || track.synthGenre}
+                      </div>
+                      {/* Floating play / now playing */}
                       <div className="absolute bottom-2 right-2">
                         {isThisPlaying ? (
-                          <button className="w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl transition-all">
-                            <Volume2 className="w-6 h-6 text-black animate-pulse" />
+                          <button className="w-10 h-10 bg-[#1db954] rounded-full flex items-center justify-center shadow-xl">
+                            <Volume2 className="w-5 h-5 text-black animate-pulse" />
                           </button>
                         ) : (
                           <button
@@ -903,36 +913,38 @@ export default function MainContent({
                               e.stopPropagation();
                               onPlayTrack(track);
                             }}
-                            className="w-12 h-12 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
+                            className="w-10 h-10 bg-[#1db954] text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl hover:scale-105"
                           >
-                            <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                            <Play className="w-5 h-5 fill-current translate-x-0.5" />
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
-                      {track.title}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate mt-1">{track.artist}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleLiked(track.id);
-                        }}
-                        className="text-zinc-400 hover:text-white transition p-1 cursor-pointer"
-                      >
-                        <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveTrack(track.id);
-                        }}
-                        className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="p-3 flex flex-col gap-1">
+                      <p className={`text-sm font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
+                        {track.title}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleLiked(track.id);
+                          }}
+                          className="text-zinc-400 hover:text-white transition p-1 cursor-pointer"
+                        >
+                          <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveTrack(track.id);
+                          }}
+                          className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
