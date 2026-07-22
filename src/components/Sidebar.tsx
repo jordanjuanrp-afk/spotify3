@@ -199,7 +199,7 @@ export default function Sidebar({
       {/* Create Playlist Modal Dialog */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-md p-6 shadow-2xl animate-lightbox-in">
             <h3 className="text-xl font-bold mb-4 text-white">Criar Nova Playlist</h3>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>

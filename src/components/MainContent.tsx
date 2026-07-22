@@ -1051,7 +1051,7 @@ export default function MainContent({
       {/* LIGHTBOX - Full image view with cinematic red effect */}
       {lightboxTrack && (
         <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setLightboxTrack(null)}
         >
           <button
@@ -1062,7 +1062,7 @@ export default function MainContent({
           </button>
 
           <div
-            className="relative max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden rounded-xl"
+            className="relative max-w-lg w-full shadow-2xl animate-lightbox-in overflow-hidden rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Main image */}
