@@ -500,7 +500,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={(tab) => {
             setActiveTab(tab);
-            if (tab === "home" || tab === "search") {
+            if (tab === "home" || tab === "search" || tab === "gallery") {
               setCurrentPlaylistId(null);
             }
           }}
@@ -521,7 +521,7 @@ export default function App() {
             activeTab={activeTab}
             setActiveTab={(tab) => {
               setActiveTab(tab);
-              if (tab === "home" || tab === "search") {
+              if (tab === "home" || tab === "search" || tab === "gallery") {
                 setCurrentPlaylistId(null);
               }
             }}
