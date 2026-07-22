@@ -29,7 +29,7 @@ export default function RightSidebar({ currentTrack, onPlayTrack, allTracks }: R
   const isFollowing = following[artistName] || false;
 
   return (
-    <aside className="w-80 bg-black flex flex-col gap-4 p-4 overflow-y-auto select-none border-l border-zinc-900 h-full" id="right-sidebar">
+    <aside className="hidden lg:flex w-80 bg-black flex-col gap-4 p-4 overflow-y-auto select-none border-l border-zinc-900 h-full shrink-0" id="right-sidebar">
       {currentTrack ? (
         <div className="flex flex-col gap-5">
           {/* Header */}

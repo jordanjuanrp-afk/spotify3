@@ -168,27 +168,27 @@ export default function MainContent({
   }, [activeLyricIndex]);
 
   return (
-    <main className="flex-1 bg-zinc-950 rounded-lg overflow-y-auto relative p-6 flex flex-col gap-6 select-none" id="main-content-panel">
+    <main className="flex-1 bg-zinc-950 rounded-lg overflow-y-auto relative p-3 sm:p-6 flex flex-col gap-4 sm:gap-6 select-none min-w-0" id="main-content-panel">
       {/* HEADER BAR */}
-      <header className="flex items-center justify-between sticky top-0 bg-zinc-950/90 backdrop-blur-md py-2 z-20" id="main-header">
-        <div className="flex items-center gap-2">
-          <button className="bg-black text-gray-400 hover:text-white p-1.5 rounded-full transition cursor-pointer">
-            <ChevronLeft className="w-5 h-5" />
+      <header className="flex items-center justify-between sticky top-0 bg-zinc-950/90 backdrop-blur-md py-2 z-20 gap-2" id="main-header">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <button className="bg-black text-gray-400 hover:text-white p-1 sm:p-1.5 rounded-full transition cursor-pointer">
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-          <button className="bg-black text-gray-400 hover:text-white p-1.5 rounded-full transition cursor-pointer">
-            <ChevronRight className="w-5 h-5" />
+          <button className="bg-black text-gray-400 hover:text-white p-1 sm:p-1.5 rounded-full transition cursor-pointer">
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Conditional search box inside header if tab is search */}
           {activeTab === "search" && (
-            <div className="relative ml-4">
-              <Search className="w-5 h-5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="relative ml-2 sm:ml-4 flex-1 max-w-sm">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="O que você quer ouvir?"
-                className="bg-zinc-800 text-white placeholder-zinc-400 text-sm pl-10 pr-4 py-2 rounded-full w-80 focus:outline-none focus:ring-2 focus:ring-white transition"
+                className="bg-zinc-800 text-white placeholder-zinc-400 text-sm pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-full w-full focus:outline-none focus:ring-2 focus:ring-white transition"
                 id="header-search-input"
               />
             </div>
@@ -196,19 +196,19 @@ export default function MainContent({
         </div>
 
         {/* User profile / actions */}
-        <div className="flex items-center gap-4">
-          <button className="bg-[#1db954] hover:bg-[#1ed760] text-black font-bold text-xs px-4 py-2 rounded-full transition hover:scale-105 cursor-pointer">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <button className="hidden sm:block bg-[#1db954] hover:bg-[#1ed760] text-black font-bold text-xs px-4 py-2 rounded-full transition hover:scale-105 cursor-pointer">
             Explorar Premium
           </button>
-          <button className="bg-black hover:text-white text-zinc-300 p-2 rounded-full transition cursor-pointer relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
+          <button className="bg-black hover:text-white text-zinc-300 p-1.5 sm:p-2 rounded-full transition cursor-pointer relative">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full" />
           </button>
-          <div className="flex items-center gap-2 bg-black px-3 py-1.5 rounded-full cursor-pointer hover:bg-zinc-900 border border-zinc-800">
-            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-full cursor-pointer hover:bg-zinc-900 border border-zinc-800">
+            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] sm:text-xs text-white font-bold">
               J
             </div>
-            <span className="text-xs font-bold text-white max-w-[100px] truncate">Jordynesjuan</span>
+            <span className="text-[10px] sm:text-xs font-bold text-white max-w-[60px] sm:max-w-[100px] truncate">Jordynesjuan</span>
           </div>
         </div>
       </header>

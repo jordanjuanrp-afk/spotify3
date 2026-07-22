@@ -6,7 +6,7 @@ import MainContent from "./components/MainContent";
 import PlayerBar from "./components/PlayerBar";
 import RightSidebar from "./components/RightSidebar";
 import { audioEngine } from "./audioEngine";
-import { Music2 } from "lucide-react";
+import { Music2, Home, Search, Grid3X3 } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
 import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
 
@@ -480,9 +480,9 @@ export default function App() {
   const isCurrentTrackLiked = currentTrack ? allTracks.find((t) => t.id === currentTrack.id)?.liked || false : false;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-black text-white overflow-hidden font-sans select-none" id="app-container">
+    <div className="h-full w-full flex flex-col bg-black text-white overflow-hidden font-sans select-none" id="app-container">
       {/* Top Section: Sidebars & Main content */}
-      <div className="flex-1 flex overflow-hidden min-h-0 p-2 gap-2">
+      <div className="flex-1 flex overflow-hidden min-h-0 p-1 sm:p-2 gap-1 sm:gap-2">
         <Sidebar
           playlists={playlists}
           currentPlaylistId={currentPlaylistId}
@@ -584,6 +584,53 @@ export default function App() {
         activeRightSidebar={activeRightSidebar}
         onToggleRightSidebar={() => setActiveRightSidebar((prev) => !prev)}
       />
+
+      {/* Mobile Bottom Navigation - visible only on small screens */}
+      <nav className="md:hidden flex items-center justify-around bg-[#121212] border-t border-zinc-900 px-2 py-1.5 shrink-0">
+        <button
+          onClick={() => {
+            setActiveTab("home");
+            setCurrentPlaylistId(null);
+          }}
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === "home" ? "text-white" : "text-zinc-500"
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Início</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("search");
+            setCurrentPlaylistId(null);
+          }}
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === "search" ? "text-white" : "text-zinc-500"
+          }`}
+        >
+          <Search className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Buscar</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("gallery");
+            setCurrentPlaylistId(null);
+          }}
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === "gallery" ? "text-white" : "text-zinc-500"
+          }`}
+        >
+          <Grid3X3 className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Galeria</span>
+        </button>
+        <button
+          onClick={() => setShowAddTrackModal(true)}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer text-zinc-500"
+        >
+          <Music2 className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Adicionar</span>
+        </button>
+      </nav>
 
       {/* Add Track Modal */}
       {showAddTrackModal && (

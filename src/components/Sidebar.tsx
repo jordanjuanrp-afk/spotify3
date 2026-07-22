@@ -41,7 +41,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-64 bg-black flex flex-col gap-2 p-2 select-none h-full" id="left-sidebar">
+    <aside className="hidden md:flex w-56 lg:w-64 bg-black flex-col gap-2 p-2 select-none h-full shrink-0" id="left-sidebar">
       {/* Home & Search links */}
       <div className="bg-[#121212] rounded-lg p-4 flex flex-col gap-4">
         <button
