@@ -133,6 +133,21 @@ export default function App() {
             const localOnly = prev.filter((t) => !serverIds.has(t.id));
             return [...tracks, ...localOnly];
           });
+          // Push local-only tracks to Supabase so they appear for all users
+          if (tracks) {
+            const localTracks = allTracksRef.current;
+            const serverIds = new Set(tracks.map((t) => t.id));
+            const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+            for (const track of localOnly) {
+              createTrack(track, user?.email).catch(() => {});
+            }
+          }
+        } else if (tracks && tracks.length === 0) {
+          // Server is empty, push all local tracks
+          const localTracks = allTracksRef.current;
+          for (const track of localTracks) {
+            createTrack(track, user?.email).catch(() => {});
+          }
         }
         if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
       } catch (err) {
@@ -144,7 +159,7 @@ export default function App() {
     loadData();
   }, []);
 
-  // Polling: sync new tracks every 5 seconds
+  // Polling: sync every 5 seconds - server is source of truth
   useEffect(() => {
     if (!dataLoaded) return;
     const syncFromServer = async () => {
@@ -158,8 +173,23 @@ export default function App() {
           const serverIds = new Set(tracks.map((t) => t.id));
           const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
           setAllTracks([...tracks, ...localOnly]);
+          // Push local-only tracks to Supabase
+          for (const track of localOnly) {
+            createTrack(track, user?.email).catch(() => {});
+          }
         }
-        if (playlistsData) setPlaylists(playlistsData);
+        if (playlistsData) {
+          setPlaylists((prevPlaylists) => {
+            const merged = [...playlistsData];
+            for (const local of prevPlaylists) {
+              if (!merged.find((p) => p.id === local.id)) {
+                merged.push(local);
+                createPlaylist(local).catch(() => {});
+              }
+            }
+            return merged;
+          });
+        }
       } catch {
         // silent fail
       }
@@ -556,7 +586,7 @@ export default function App() {
     }
 
     try {
-      await createTrack(newTrack);
+      await createTrack(newTrack, user?.email);
       setAllTracks((prev) => [...prev, newTrack]);
       setActiveTab("search");
       setSyncTrigger((t) => t + 1);
@@ -596,7 +626,7 @@ export default function App() {
       }
 
       try {
-        await createTrack(newTrack);
+        await createTrack(newTrack, user?.email);
         newTracks.push(newTrack);
       } catch (err) {
         console.error("Erro ao enviar track para o servidor:", err);

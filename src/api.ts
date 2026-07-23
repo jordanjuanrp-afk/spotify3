@@ -68,7 +68,7 @@ export async function fetchTracks(): Promise<Track[]> {
   return localGet<Track[]>("spotify_clone_tracks", []);
 }
 
-export async function createTrack(track: Track): Promise<Track> {
+export async function createTrack(track: Track, userEmail?: string): Promise<Track> {
   if (supabase) {
     const { error } = await supabase.from("tracks").upsert({
       id: track.id,
@@ -82,6 +82,7 @@ export async function createTrack(track: Track): Promise<Track> {
       liked: track.liked ?? false,
       isPodcast: track.isPodcast ?? false,
       audio_url: track.audioUrl ?? null,
+      user_email: userEmail ?? null,
     }, { onConflict: "id" });
     if (error) throw error;
     return track;
