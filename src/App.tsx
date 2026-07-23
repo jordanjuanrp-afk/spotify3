@@ -295,7 +295,8 @@ export default function App() {
       setIsPlaying(false);
     } else {
       const audioData = await getAudioFile(currentTrack.id);
-      const trackToPlay = audioData ? { ...currentTrack, audioFile: audioData } : currentTrack;
+      const audio = audioData || currentTrack.audioFile;
+      const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       audioEngine.play(trackToPlay);
       setIsPlaying(true);
     }
@@ -308,7 +309,8 @@ export default function App() {
     setIsPlaying(true);
 
     const audioData = await getAudioFile(track.id);
-    const trackToPlay = audioData ? { ...track, audioFile: audioData } : track;
+    const audio = audioData || track.audioFile;
+    const trackToPlay = audio ? { ...track, audioFile: audio } : track;
     audioEngine.play(trackToPlay);
 
     if (fromPlaylistId) {
@@ -515,15 +517,17 @@ export default function App() {
     if (audioFile) {
       const reader = new FileReader();
       reader.onload = async () => {
+        const base64 = reader.result as string;
         try {
-          await saveAudioFile(newId, reader.result as string);
+          await saveAudioFile(newId, base64);
         } catch (err) {
           console.error("Erro ao salvar áudio:", err);
         }
-        setAllTracks((prev) => [...prev, newTrack]);
+        const trackWithAudio = { ...newTrack, audioFile: base64 };
+        setAllTracks((prev) => [...prev, trackWithAudio]);
         setActiveTab("search");
         try {
-          await createTrack({ ...newTrack, audioFile: undefined });
+          await createTrack(trackWithAudio);
         } catch (err) {
           console.error("Erro ao enviar track para o servidor:", err);
         }
@@ -551,7 +555,6 @@ export default function App() {
     for (const item of batch) {
       const newId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const newTrack: Track = { ...item.track, id: newId };
-      newTracks.push(newTrack);
 
       if (item.audioFile) {
         try {
@@ -562,10 +565,13 @@ export default function App() {
             reader.readAsDataURL(item.audioFile!);
           });
           await saveAudioFile(newId, base64);
+          newTrack.audioFile = base64;
         } catch (err) {
           console.error("Erro ao salvar áudio:", err);
         }
       }
+
+      newTracks.push(newTrack);
     }
 
     setAllTracks((prev) => [...prev, ...newTracks]);
@@ -573,7 +579,7 @@ export default function App() {
 
     for (const track of newTracks) {
       try {
-        await createTrack({ ...track, audioFile: undefined });
+        await createTrack(track);
       } catch (err) {
         console.error("Erro ao enviar track para o servidor:", err);
       }

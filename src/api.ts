@@ -41,6 +41,7 @@ export async function fetchTracks(): Promise<Track[]> {
       lyrics: r.lyrics ?? undefined,
       liked: r.liked ?? false,
       isPodcast: r.isPodcast ?? false,
+      audioFile: r.audio_file ?? undefined,
     }));
   }
   return localGet<Track[]>("spotify_clone_tracks", []);
@@ -48,18 +49,18 @@ export async function fetchTracks(): Promise<Track[]> {
 
 export async function createTrack(track: Track): Promise<Track> {
   if (supabase) {
-    const { audioFile, ...rest } = track;
     const { error } = await supabase.from("tracks").upsert({
-      id: rest.id,
-      title: rest.title,
-      artist: rest.artist,
-      album: rest.album,
-      cover: rest.cover,
-      duration: rest.duration,
-      synthGenre: rest.synthGenre,
-      lyrics: rest.lyrics ?? null,
-      liked: rest.liked ?? false,
-      isPodcast: rest.isPodcast ?? false,
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      cover: track.cover,
+      duration: track.duration,
+      synthGenre: track.synthGenre,
+      lyrics: track.lyrics ?? null,
+      liked: track.liked ?? false,
+      isPodcast: track.isPodcast ?? false,
+      audio_file: track.audioFile ?? null,
     }, { onConflict: "id" });
     if (error) throw error;
     return track;

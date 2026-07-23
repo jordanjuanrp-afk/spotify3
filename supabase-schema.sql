@@ -9,6 +9,7 @@ create table if not exists tracks (
   lyrics jsonb,
   liked boolean default false,
   isPodcast boolean default false,
+  audio_file text,
   user_email text
 );
 
