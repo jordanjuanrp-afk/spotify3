@@ -78,8 +78,8 @@ class AudioEngine {
     this.isPlaying = true;
     this.currentTrack = track;
 
-    // Check if this track has an uploaded audio file
-    if (track.audioFile) {
+    // Check if this track has an uploaded audio file (local or remote)
+    if (track.audioFile || track.audioUrl) {
       this.playUploadedFile(track);
       return;
     }
@@ -124,7 +124,7 @@ class AudioEngine {
   }
 
   private playUploadedFile(track: Track) {
-    if (!this.ctx || !this.masterGain || !track.audioFile) return;
+    if (!this.ctx || !this.masterGain) return;
 
     this.usingUploadedFile = true;
 
@@ -134,7 +134,8 @@ class AudioEngine {
       this.mediaElement.crossOrigin = "anonymous";
     }
 
-    this.mediaElement.src = track.audioFile;
+    // Use audioUrl (Supabase Storage) if available, fallback to audioFile (base64)
+    this.mediaElement.src = track.audioFile || track.audioUrl || "";
     this.mediaElement.volume = this.masterGain.gain.value;
 
     // Connect to Web Audio API for visualization

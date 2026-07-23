@@ -1,6 +1,8 @@
 import { Track, Playlist } from "./types";
 import { supabase } from "./supabase";
 
+const BUCKET_NAME = "audio";
+
 function localGet<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -12,6 +14,36 @@ function localGet<T>(key: string, fallback: T): T {
 
 function localSet(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+// Upload audio file to Supabase Storage, return public URL
+export async function uploadAudio(trackId: string, file: File): Promise<string> {
+  if (!supabase) throw new Error("Supabase not configured");
+
+  const ext = file.name.split(".").pop() || "mp3";
+  const path = `${trackId}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(path, file, { contentType: file.type, upsert: true });
+
+  if (error) throw error;
+
+  const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+// Delete audio file from Supabase Storage
+export async function deleteAudioFromStorage(trackId: string): Promise<void> {
+  if (!supabase) return;
+  // List files matching the trackId prefix
+  const { data: files } = await supabase.storage.from(BUCKET_NAME).list("", { search: trackId });
+  if (files && files.length > 0) {
+    const paths = files.filter((f) => f.name.startsWith(trackId)).map((f) => f.name);
+    if (paths.length > 0) {
+      await supabase.storage.from(BUCKET_NAME).remove(paths);
+    }
+  }
 }
 
 // Tracks
@@ -30,6 +62,7 @@ export async function fetchTracks(): Promise<Track[]> {
       lyrics: r.lyrics ?? undefined,
       liked: r.liked ?? false,
       isPodcast: r.isPodcast ?? false,
+      audioUrl: r.audio_url ?? undefined,
     }));
   }
   return localGet<Track[]>("spotify_clone_tracks", []);
@@ -48,6 +81,7 @@ export async function createTrack(track: Track): Promise<Track> {
       lyrics: track.lyrics ?? null,
       liked: track.liked ?? false,
       isPodcast: track.isPodcast ?? false,
+      audio_url: track.audioUrl ?? null,
     }, { onConflict: "id" });
     if (error) throw error;
     return track;
@@ -71,6 +105,7 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (data.lyrics !== undefined) update.lyrics = data.lyrics;
     if (data.liked !== undefined) update.liked = data.liked;
     if (data.isPodcast !== undefined) update.isPodcast = data.isPodcast;
+    if (data.audioUrl !== undefined) update.audio_url = data.audioUrl;
     const { error } = await supabase.from("tracks").update(update).eq("id", id);
     if (error) throw error;
     return { ...data, id } as Track;
@@ -86,6 +121,7 @@ export async function deleteTrack(id: string): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from("tracks").delete().eq("id", id);
     if (error) throw error;
+    await deleteAudioFromStorage(id).catch(() => {});
     return;
   }
   const tracks = localGet<Track[]>("spotify_clone_tracks", []);

@@ -9,7 +9,8 @@ export interface Track {
   lyrics?: Array<{ time: number; text: string }>;
   liked?: boolean;
   isPodcast?: boolean;
-  audioFile?: string; // base64 data URL of uploaded audio
+  audioFile?: string; // base64 data URL of uploaded audio (local)
+  audioUrl?: string; // public URL from Supabase Storage (shared)
 }
 
 export interface Playlist {

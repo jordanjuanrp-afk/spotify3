@@ -10,6 +10,7 @@ create table if not exists tracks (
   liked boolean default false,
   isPodcast boolean default false,
   audio_file text,
+  audio_url text,
   user_email text
 );
 
@@ -35,3 +36,15 @@ create policy "Public read" on playlists for select using (true);
 create policy "Public insert" on playlists for insert with check (true);
 create policy "Public update" on playlists for update using (true);
 create policy "Public delete" on playlists for delete using (true);
+
+-- Supabase Storage: create 'audio' bucket (run in Supabase Dashboard > Storage)
+-- insert into storage.buckets (id, name, public) values ('audio', 'audio', true);
+
+-- Storage policy: allow public read
+-- create policy "Public read audio" on storage.objects for select using (bucket_id = 'audio');
+
+-- Storage policy: allow authenticated insert
+-- create policy "Anyone can upload audio" on storage.objects for insert with check (bucket_id = 'audio');
+
+-- Storage policy: allow delete
+-- create policy "Anyone can delete audio" on storage.objects for delete using (bucket_id = 'audio');

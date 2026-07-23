@@ -21,6 +21,7 @@ import {
   deleteTrack,
   createPlaylist,
   updatePlaylist,
+  uploadAudio,
 } from "./api";
 
 export default function App() {
@@ -298,7 +299,7 @@ export default function App() {
       setIsPlaying(false);
     } else {
       const audioData = await getAudioFile(currentTrack.id);
-      const audio = audioData || currentTrack.audioFile;
+      const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       audioEngine.play(trackToPlay);
       setIsPlaying(true);
@@ -312,7 +313,7 @@ export default function App() {
     setIsPlaying(true);
 
     const audioData = await getAudioFile(track.id);
-    const audio = audioData || track.audioFile;
+    const audio = audioData || track.audioFile || track.audioUrl;
     const trackToPlay = audio ? { ...track, audioFile: audio } : track;
     audioEngine.play(trackToPlay);
 
@@ -359,7 +360,8 @@ export default function App() {
     if (repeat) {
       setProgress(0);
       const audioData = await getAudioFile(currentTrack.id);
-      const trackToPlay = audioData ? { ...currentTrack, audioFile: audioData } : currentTrack;
+      const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
+      const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       audioEngine.play(trackToPlay);
       return;
     } else if (shuffle) {
@@ -521,6 +523,7 @@ export default function App() {
     const newTrack: Track = { ...trackData, id: newId };
 
     if (audioFile) {
+      // Save to local IndexedDB as fallback
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
         reader.onload = () => resolve(reader.result as string);
@@ -531,6 +534,13 @@ export default function App() {
         await saveAudioFile(newId, base64);
       } catch (err) {
         console.error("Erro ao salvar áudio local:", err);
+      }
+      // Upload to Supabase Storage for all users
+      try {
+        const audioUrl = await uploadAudio(newId, audioFile);
+        newTrack.audioUrl = audioUrl;
+      } catch (err) {
+        console.error("Erro ao enviar áudio para Supabase Storage:", err);
       }
     }
 
@@ -563,7 +573,14 @@ export default function App() {
           });
           await saveAudioFile(newId, base64);
         } catch (err) {
-          console.error("Erro ao salvar áudio:", err);
+          console.error("Erro ao salvar áudio local:", err);
+        }
+        // Upload to Supabase Storage
+        try {
+          const audioUrl = await uploadAudio(newId, item.audioFile);
+          newTrack.audioUrl = audioUrl;
+        } catch (err) {
+          console.error("Erro ao enviar áudio para Supabase Storage:", err);
         }
       }
 
