@@ -30,7 +30,6 @@ export async function fetchTracks(): Promise<Track[]> {
       lyrics: r.lyrics ?? undefined,
       liked: r.liked ?? false,
       isPodcast: r.isPodcast ?? false,
-      audioFile: r.audio_file ?? undefined,
     }));
   }
   return localGet<Track[]>("spotify_clone_tracks", []);
@@ -49,7 +48,6 @@ export async function createTrack(track: Track): Promise<Track> {
       lyrics: track.lyrics ?? null,
       liked: track.liked ?? false,
       isPodcast: track.isPodcast ?? false,
-      audio_file: track.audioFile ?? null,
     }, { onConflict: "id" });
     if (error) throw error;
     return track;

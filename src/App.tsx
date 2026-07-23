@@ -527,33 +527,22 @@ export default function App() {
         reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(audioFile);
       });
-      const trackWithAudio = { ...newTrack, audioFile: base64 };
       try {
         await saveAudioFile(newId, base64);
       } catch (err) {
         console.error("Erro ao salvar áudio local:", err);
       }
-      try {
-        await createTrack(trackWithAudio);
-        setAllTracks((prev) => [...prev, trackWithAudio]);
-        setActiveTab("search");
-        setSyncTrigger((t) => t + 1);
-      } catch (err) {
-        console.error("Erro ao enviar track para o servidor:", err);
-        setAllTracks((prev) => [...prev, trackWithAudio]);
-        setActiveTab("search");
-      }
-    } else {
-      try {
-        await createTrack(newTrack);
-        setAllTracks((prev) => [...prev, newTrack]);
-        setActiveTab("search");
-        setSyncTrigger((t) => t + 1);
-      } catch (err) {
-        console.error("Erro ao enviar track para o servidor:", err);
-        setAllTracks((prev) => [...prev, newTrack]);
-        setActiveTab("search");
-      }
+    }
+
+    try {
+      await createTrack(newTrack);
+      setAllTracks((prev) => [...prev, newTrack]);
+      setActiveTab("search");
+      setSyncTrigger((t) => t + 1);
+    } catch (err) {
+      console.error("Erro ao enviar track para o servidor:", err);
+      setAllTracks((prev) => [...prev, newTrack]);
+      setActiveTab("search");
     }
   };
 
@@ -573,7 +562,6 @@ export default function App() {
             reader.readAsDataURL(item.audioFile!);
           });
           await saveAudioFile(newId, base64);
-          newTrack.audioFile = base64;
         } catch (err) {
           console.error("Erro ao salvar áudio:", err);
         }
