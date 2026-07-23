@@ -292,6 +292,17 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
+  if (!dataLoaded) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-zinc-400">Carregando músicas...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handlePlayPause = async () => {
     if (!currentTrack) return;
     if (isPlaying) {
