@@ -49,7 +49,7 @@ export async function fetchTracks(): Promise<Track[]> {
 export async function createTrack(track: Track): Promise<Track> {
   if (supabase) {
     const { audioFile, ...rest } = track;
-    const { error } = await supabase.from("tracks").insert({
+    const { error } = await supabase.from("tracks").upsert({
       id: rest.id,
       title: rest.title,
       artist: rest.artist,
@@ -60,7 +60,7 @@ export async function createTrack(track: Track): Promise<Track> {
       lyrics: rest.lyrics ?? null,
       liked: rest.liked ?? false,
       isPodcast: rest.isPodcast ?? false,
-    });
+    }, { onConflict: "id" });
     if (error) throw error;
     return track;
   }
@@ -120,14 +120,14 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
 
 export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
   if (supabase) {
-    const { error } = await supabase.from("playlists").insert({
+    const { error } = await supabase.from("playlists").upsert({
       id: playlist.id,
       name: playlist.name,
       description: playlist.description ?? null,
       cover: playlist.cover,
       tracks: playlist.tracks,
       isCustom: playlist.isCustom ?? false,
-    });
+    }, { onConflict: "id" });
     if (error) throw error;
     return playlist;
   }

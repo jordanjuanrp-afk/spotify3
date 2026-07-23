@@ -101,6 +101,8 @@ export default function App() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const allTracksRef = useRef(allTracks);
+  allTracksRef.current = allTracks;
 
   const handleLogin = (name: string, email: string) => {
     const userData = { name, email };
@@ -122,7 +124,13 @@ export default function App() {
           fetchTracks().catch(() => null),
           fetchPlaylists().catch(() => null),
         ]);
-        if (tracks && tracks.length > 0) setAllTracks(tracks);
+        if (tracks && tracks.length > 0) {
+          setAllTracks((prev) => {
+            const serverIds = new Set(tracks.map((t) => t.id));
+            const localOnly = prev.filter((t) => !serverIds.has(t.id));
+            return [...tracks, ...localOnly];
+          });
+        }
         if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
       } catch (err) {
         console.error("Erro ao carregar dados do servidor:", err);
@@ -142,7 +150,12 @@ export default function App() {
           fetchTracks().catch(() => null),
           fetchPlaylists().catch(() => null),
         ]);
-        if (tracks) setAllTracks(tracks);
+        if (tracks && tracks.length > 0) {
+          const localTracks = allTracksRef.current;
+          const serverIds = new Set(tracks.map((t) => t.id));
+          const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+          setAllTracks([...tracks, ...localOnly]);
+        }
         if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
       } catch {
         // silent fail
