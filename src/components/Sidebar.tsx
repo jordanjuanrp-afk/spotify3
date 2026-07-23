@@ -238,7 +238,7 @@ export default function Sidebar({
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:bg-[#3e3e3e] hover:text-white transition cursor-pointer"
               >
                 <User className="w-4 h-4" />
-                <span>Trocar de usuario</span>
+                <span>Trocar de usuário</span>
               </button>
               <div className="h-px bg-[#3e3e3e]" />
               <button
@@ -260,8 +260,8 @@ export default function Sidebar({
       {showSwitchModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-md p-6 shadow-2xl animate-lightbox-in">
-            <h3 className="text-xl font-bold mb-1 text-white">Trocar de usuario</h3>
-            <p className="text-sm text-zinc-400 mb-5">Entre com os dados do novo usuario</p>
+            <h3 className="text-xl font-bold mb-1 text-white">Trocar de usuário</h3>
+            <p className="text-sm text-zinc-400 mb-5">Entre com os dados do novo usuário</p>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -280,7 +280,7 @@ export default function Sidebar({
                   required
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  placeholder="Nome do novo usuario"
+                  placeholder="Nome do novo usuário"
                   className="w-full bg-[#2a2a2a] border border-[#3e3e3e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#1db954]"
                   autoFocus
                 />

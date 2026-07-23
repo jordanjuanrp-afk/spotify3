@@ -66,7 +66,7 @@ export default function RightSidebar({ currentTrack, onPlayTrack, allTracks }: R
             <div className="relative rounded overflow-hidden aspect-video bg-zinc-950 flex items-center justify-center group cursor-pointer border border-zinc-800">
               <img
                 src={currentTrack.cover}
-                alt="Videoclip mock"
+                alt="Videoclipe de exemplo"
                 className="w-full h-full object-cover opacity-40 blur-xs"
                 referrerPolicy="no-referrer"
               />
@@ -75,7 +75,7 @@ export default function RightSidebar({ currentTrack, onPlayTrack, allTracks }: R
                   <Play className="w-5 h-5 text-white fill-white" />
                 </div>
                 <span className="text-[10px] text-zinc-300 font-semibold mt-2 bg-black/60 px-2 py-0.5 rounded">
-                  Assistir no Player (02:48)
+                  Assistir no Videoclipe (02:48)
                 </span>
               </div>
             </div>

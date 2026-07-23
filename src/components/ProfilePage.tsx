@@ -47,7 +47,7 @@ export default function ProfilePage({
         <div className="bg-[#181818] rounded-xl p-4 border border-[#2a2a2a]">
           <Music className="w-5 h-5 text-[#1db954] mb-2" />
           <p className="text-2xl font-bold text-white">{allTracks.length}</p>
-          <p className="text-xs text-zinc-400">Musicas</p>
+          <p className="text-xs text-zinc-400">Músicas</p>
         </div>
         <div className="bg-[#181818] rounded-xl p-4 border border-[#2a2a2a]">
           <Heart className="w-5 h-5 text-pink-500 mb-2" />
@@ -70,7 +70,7 @@ export default function ProfilePage({
       <div className="mb-8">
         <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
           <Settings className="w-5 h-5" />
-          Configuracoes
+          Configurações
         </h2>
         <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a]">
@@ -100,7 +100,7 @@ export default function ProfilePage({
       {/* Recent Tracks */}
       {allTracks.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-white mb-3">Suas Musicas</h2>
+          <h2 className="text-lg font-bold text-white mb-3">Suas Músicas</h2>
           <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] overflow-hidden">
             {allTracks.slice(0, 5).map((track, i) => (
               <div
@@ -126,7 +126,7 @@ export default function ProfilePage({
             ))}
             {allTracks.length > 5 && (
               <div className="px-4 py-2 text-center">
-                <p className="text-xs text-zinc-500">+{allTracks.length - 5} musicas</p>
+                <p className="text-xs text-zinc-500">+{allTracks.length - 5} músicas</p>
               </div>
             )}
           </div>

@@ -66,7 +66,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </h2>
           <p className="text-sm text-zinc-400 mb-6">
             {isSignUp
-              ? "Cadastre-se para comecar a ouvir"
+              ? "Cadastre-se para começar a ouvir"
               : "Bem-vindo de volta!"}
           </p>
 
@@ -171,7 +171,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
           {/* Toggle login/signup */}
           <p className="text-center text-sm text-zinc-400">
-            {isSignUp ? "Ja tem uma conta?" : "Nao tem uma conta?"}{" "}
+            {isSignUp ? "Já tem uma conta?" : "Não tem uma conta?"}{" "}
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
@@ -186,7 +186,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Footer */}
         <p className="text-center text-[11px] text-zinc-600 mt-6">
-          Continuando, voce concorda com os Termos de Uso e Politica de Privacidade.
+          Continuando, você concorda com os Termos de Uso e Política de Privacidade.
         </p>
       </div>
     </div>
