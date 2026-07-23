@@ -55,3 +55,29 @@ export async function deleteAudioFile(trackId: string): Promise<void> {
     tx.onerror = () => reject(tx.error);
   });
 }
+
+// Download audio from URL, convert to base64 and save to IndexedDB
+export async function downloadAndCacheAudio(trackId: string, audioUrl: string): Promise<string | null> {
+  try {
+    // Check if already cached
+    const existing = await getAudioFile(trackId);
+    if (existing) return existing;
+
+    const response = await fetch(audioUrl);
+    if (!response.ok) return null;
+
+    const blob = await response.blob();
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+
+    await saveAudioFile(trackId, base64);
+    return base64;
+  } catch (err) {
+    console.error("Erro ao baixar áudio:", err);
+    return null;
+  }
+}

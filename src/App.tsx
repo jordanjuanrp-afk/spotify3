@@ -11,7 +11,7 @@ import { audioEngine } from "./audioEngine";
 import { Music2, Home, Search, Grid3X3, User } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
 import BackgroundBoxes from "./components/BackgroundBoxes";
-import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
+import { saveAudioFile, getAudioFile, deleteAudioFile, downloadAndCacheAudio } from "./audioStorage";
 import { ADMIN_EMAIL } from "./admin";
 import {
   fetchTracks,
@@ -134,12 +134,20 @@ export default function App() {
             return [...tracks, ...localOnly];
           });
           // Push local-only tracks to Supabase so they appear for all users
-          if (tracks) {
-            const localTracks = allTracksRef.current;
-            const serverIds = new Set(tracks.map((t) => t.id));
-            const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
-            for (const track of localOnly) {
-              createTrack(track, user?.email).catch(() => {});
+          const localTracks = allTracksRef.current;
+          const serverIds = new Set(tracks.map((t) => t.id));
+          const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+          for (const track of localOnly) {
+            createTrack(track, user?.email).catch(() => {});
+          }
+          // Background: download and cache audio from audioUrl for all tracks
+          for (const track of tracks) {
+            if (track.audioUrl) {
+              getAudioFile(track.id).then((cached) => {
+                if (!cached) {
+                  downloadAndCacheAudio(track.id, track.audioUrl!).catch(() => {});
+                }
+              });
             }
           }
         } else if (tracks && tracks.length === 0) {
@@ -339,7 +347,10 @@ export default function App() {
       audioEngine.pause();
       setIsPlaying(false);
     } else {
-      const audioData = await getAudioFile(currentTrack.id);
+      let audioData = await getAudioFile(currentTrack.id);
+      if (!audioData && currentTrack.audioUrl) {
+        audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
+      }
       const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       audioEngine.play(trackToPlay);
@@ -353,7 +364,10 @@ export default function App() {
     setProgress(0);
     setIsPlaying(true);
 
-    const audioData = await getAudioFile(track.id);
+    let audioData = await getAudioFile(track.id);
+    if (!audioData && track.audioUrl) {
+      audioData = await downloadAndCacheAudio(track.id, track.audioUrl);
+    }
     const audio = audioData || track.audioFile || track.audioUrl;
     const trackToPlay = audio ? { ...track, audioFile: audio } : track;
     audioEngine.play(trackToPlay);
@@ -400,7 +414,10 @@ export default function App() {
     let nextTrackId = "";
     if (repeat) {
       setProgress(0);
-      const audioData = await getAudioFile(currentTrack.id);
+      let audioData = await getAudioFile(currentTrack.id);
+      if (!audioData && currentTrack.audioUrl) {
+        audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
+      }
       const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       audioEngine.play(trackToPlay);
