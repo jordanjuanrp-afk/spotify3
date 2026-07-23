@@ -21,7 +21,12 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ("serviceWorker" in navigator) {
+      // Skip service worker in Capacitor builds
+      const isCapacitor = window.location.protocol === "capacitor:" || 
+                           window.location.protocol === "capacitor-js:" ||
+                           window.location.hostname === "localhost";
+      
+      if ("serviceWorker" in navigator && !isCapacitor) {
         window.addEventListener("load", () => {
           navigator.serviceWorker.register("/sw.js").catch(() => {});
         });

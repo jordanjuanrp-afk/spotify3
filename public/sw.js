@@ -1,4 +1,4 @@
-const CACHE_NAME = "spotify3-v1";
+const CACHE_NAME = "spotify3-v2";
 const ASSETS = [
   "/",
   "/index.html",
@@ -26,8 +26,20 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
+  // Skip caching for Capacitor native protocol (capacitor://)
+  if (url.protocol === "capacitor:" || url.protocol === "capacitor-js:") {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Skip caching for API requests
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Skip caching for data: URLs
+  if (url.protocol === "data:") {
     return;
   }
 
