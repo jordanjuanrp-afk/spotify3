@@ -35,8 +35,26 @@ export default function App() {
     return null;
   });
 
-  const [playlists, setPlaylists] = useState<Playlist[]>(INITIAL_PLAYLISTS);
-  const [allTracks, setAllTracks] = useState<Track[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>(() => {
+    const saved = localStorage.getItem("spotify_clone_playlists");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch { /* ignore */ }
+    }
+    return INITIAL_PLAYLISTS;
+  });
+  const [allTracks, setAllTracks] = useState<Track[]>(() => {
+    const saved = localStorage.getItem("spotify_clone_tracks");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
@@ -101,11 +119,11 @@ export default function App() {
     const loadData = async () => {
       try {
         const [tracks, playlistsData] = await Promise.all([
-          fetchTracks().catch(() => []),
-          fetchPlaylists().catch(() => INITIAL_PLAYLISTS),
+          fetchTracks().catch(() => null),
+          fetchPlaylists().catch(() => null),
         ]);
-        setAllTracks(tracks);
-        setPlaylists(playlistsData.length > 0 ? playlistsData : INITIAL_PLAYLISTS);
+        if (tracks && tracks.length > 0) setAllTracks(tracks);
+        if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
       } catch (err) {
         console.error("Erro ao carregar dados do servidor:", err);
       } finally {
