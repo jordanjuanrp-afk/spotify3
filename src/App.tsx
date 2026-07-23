@@ -23,6 +23,8 @@ import {
   updatePlaylist,
 } from "./api";
 
+const LazyBackgroundBoxes = React.lazy(() => import("./components/BackgroundBoxes"));
+
 export default function App() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
     const saved = localStorage.getItem("spotify_clone_user");
@@ -609,22 +611,24 @@ export default function App() {
       onTouchMove={handleTouchMove}
     >
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <BackgroundBoxes
-          backgroundColor="transparent"
-          boxSize={35}
-          borderWidth={1}
-          borderColor="rgba(255,255,255,0.08)"
-          rotate={mouseRotate}
-          colors={{
-            paletteCount: 6,
-            color1: "#1db954",
-            color2: "#1ed760",
-            color3: "#ffffff",
-            color4: "#535353",
-            color5: "#b3b3b3",
-            color6: "#121212",
-          }}
-        />
+        <React.Suspense fallback={null}>
+          <LazyBackgroundBoxes
+            backgroundColor="transparent"
+            boxSize={35}
+            borderWidth={1}
+            borderColor="rgba(255,255,255,0.08)"
+            rotate={mouseRotate}
+            colors={{
+              paletteCount: 6,
+              color1: "#1db954",
+              color2: "#1ed760",
+              color3: "#ffffff",
+              color4: "#535353",
+              color5: "#b3b3b3",
+              color6: "#121212",
+            }}
+          />
+        </React.Suspense>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
