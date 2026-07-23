@@ -77,8 +77,8 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       synthGenre: track.synthGenre,
       lyrics: track.lyrics ?? null,
       liked: track.liked ?? false,
-      isPodcast: track.isPodcast ?? false,
     };
+    if (track.isPodcast) row.isPodcast = true;
     if (track.audioUrl) row.audio_url = track.audioUrl;
     if (userEmail) row.user_email = userEmail;
 
@@ -147,14 +147,16 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
 
 export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
   if (supabase) {
-    const { error } = await supabase.from("playlists").upsert({
+    const row: Record<string, unknown> = {
       id: playlist.id,
       name: playlist.name,
       description: playlist.description ?? null,
       cover: playlist.cover,
       tracks: playlist.tracks,
-      isCustom: playlist.isCustom ?? false,
-    }, { onConflict: "id" });
+    };
+    if (playlist.isCustom) row.isCustom = true;
+
+    const { error } = await supabase.from("playlists").upsert(row, { onConflict: "id" });
     if (error) throw error;
     return playlist;
   }
