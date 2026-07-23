@@ -34,6 +34,7 @@ interface MainContentProps {
   currentTrack: Track | null;
   isPlaying: boolean;
   progress: number;
+  isAdmin?: boolean;
   onPlayTrack: (track: Track, fromPlaylistId?: string) => void;
   onToggleLiked: (trackId: string) => void;
   onAddTrackToPlaylist: (playlistId: string, trackId: string) => void;
@@ -52,6 +53,7 @@ export default function MainContent({
   currentTrack,
   isPlaying,
   progress,
+  isAdmin,
   onPlayTrack,
   onToggleLiked,
   onAddTrackToPlaylist,
@@ -286,15 +288,17 @@ export default function MainContent({
 
                       {/* Playing soundwave animation or Play button */}
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveTrack(track.id);
-                          }}
-                          className="w-8 h-8 bg-red-600/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                        >
-                          <Trash2 className="w-4 h-4 text-white" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveTrack(track.id);
+                            }}
+                            className="w-8 h-8 bg-red-600/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                          >
+                            <Trash2 className="w-4 h-4 text-white" />
+                          </button>
+                        )}
                         {isThisPlaying ? (
                           <div className="w-10 h-10 bg-[#1db954] rounded-full flex items-center justify-center shadow-lg">
                             <Volume2 className="w-5 h-5 text-black animate-pulse" />
@@ -490,20 +494,22 @@ export default function MainContent({
                             className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-white transition p-1 cursor-pointer"
                           >
                             <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRemoveTrack(track.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                           </button>
+                           {isAdmin && (
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 onRemoveTrack(track.id);
+                               }}
+                               className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </button>
+                           )}
+                         </div>
+                       );
+                     })}
+                   </div>
                 ) : (
                   <p className="text-sm text-zinc-400 p-6 text-center">Nenhuma música encontrada.</p>
                 )}
@@ -548,15 +554,17 @@ export default function MainContent({
                             >
                               <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRemoveTrack(track.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRemoveTrack(track.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         );
                       })}
@@ -743,15 +751,17 @@ export default function MainContent({
                       >
                         <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveTrack(track.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition cursor-pointer p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveTrack(track.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition cursor-pointer p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <span className="text-xs text-zinc-400 font-medium">
                         {min}:{sec < 10 ? "0" : ""}
                         {sec}
@@ -953,15 +963,17 @@ export default function MainContent({
                         >
                           <Heart className={`w-4 h-4 ${track.liked ? "text-[#1db954] fill-[#1db954]" : ""}`} />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveTrack(track.id);
-                          }}
-                          className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveTrack(track.id);
+                            }}
+                            className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

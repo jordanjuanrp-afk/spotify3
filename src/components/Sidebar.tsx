@@ -14,6 +14,7 @@ interface SidebarProps {
   isPlayingTrackId?: string;
   isAudioPlaying?: boolean;
   userName?: string;
+  isAdmin?: boolean;
   onLogout?: () => void;
   onSwitchUser?: (name: string, email: string) => void;
 }
@@ -30,6 +31,7 @@ export default function Sidebar({
   isPlayingTrackId,
   isAudioPlaying,
   userName,
+  isAdmin,
   onLogout,
   onSwitchUser,
 }: SidebarProps) {
@@ -119,22 +121,26 @@ export default function Sidebar({
             <span>Sua Biblioteca</span>
           </button>
           <div className="flex items-center gap-1">
-            <button
-              onClick={onOpenAddTrack}
-              title="Adicionar Música"
-              className="hover:text-white hover:bg-[#1a1a1a] p-1.5 rounded-full transition cursor-pointer"
-              id="add-track-btn"
-            >
-              <Music className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              title="Criar Playlist"
-              className="hover:text-white hover:bg-[#1a1a1a] p-1.5 rounded-full transition cursor-pointer"
-              id="create-playlist-btn"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={onOpenAddTrack}
+                  title="Adicionar Música"
+                  className="hover:text-white hover:bg-[#1a1a1a] p-1.5 rounded-full transition cursor-pointer"
+                  id="add-track-btn"
+                >
+                  <Music className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  title="Criar Playlist"
+                  className="hover:text-white hover:bg-[#1a1a1a] p-1.5 rounded-full transition cursor-pointer"
+                  id="create-playlist-btn"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 

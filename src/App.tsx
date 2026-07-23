@@ -12,6 +12,7 @@ import { Music2, Home, Search, Grid3X3, User } from "lucide-react";
 import AddTrackModal from "./components/AddTrackModal";
 import BackgroundBoxes from "./components/BackgroundBoxes";
 import { saveAudioFile, getAudioFile, deleteAudioFile } from "./audioStorage";
+import { ADMIN_EMAIL } from "./admin";
 import {
   fetchTracks,
   fetchPlaylists,
@@ -597,6 +598,7 @@ export default function App() {
 
   const likedCount = allTracks.filter((t) => t.liked).length;
   const isCurrentTrackLiked = currentTrack ? allTracks.find((t) => t.id === currentTrack.id)?.liked || false : false;
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   return (
     <div
@@ -650,6 +652,7 @@ export default function App() {
           isPlayingTrackId={currentTrack?.id}
           isAudioPlaying={isPlaying}
           userName={user.name}
+          isAdmin={isAdmin}
           onLogout={handleLogout}
           onSwitchUser={handleLogin}
         />
@@ -685,6 +688,7 @@ export default function App() {
             onRemoveTrackFromPlaylist={handleRemoveTrackFromPlaylist}
             onRemoveTrack={handleRemoveTrack}
             onPlayPlaylist={handlePlayPlaylist}
+            isAdmin={isAdmin}
           />
 
           {activeTab === "profile" && (
@@ -774,13 +778,15 @@ export default function App() {
           <Grid3X3 className="w-5 h-5" />
           <span className="text-[10px] font-semibold">Galeria</span>
         </button>
-        <button
-          onClick={() => setShowAddTrackModal(true)}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer text-zinc-500"
-        >
-          <Music2 className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Adicionar</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddTrackModal(true)}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition cursor-pointer text-zinc-500"
+          >
+            <Music2 className="w-5 h-5" />
+            <span className="text-[10px] font-semibold">Adicionar</span>
+          </button>
+        )}
         <button
           onClick={() => {
             setActiveTab("profile");
