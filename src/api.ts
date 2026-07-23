@@ -82,8 +82,21 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
     if (track.audioUrl) row.audio_url = track.audioUrl;
     if (userEmail) row.user_email = userEmail;
 
-    const { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
-    if (error) throw error;
+    let { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
+
+    if (error) {
+      const minimal: Record<string, unknown> = {
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        cover: track.cover,
+        duration: track.duration,
+      };
+      const retry = await supabase.from("tracks").upsert(minimal, { onConflict: "id" });
+      if (retry.error) throw retry.error;
+    }
+
     return track;
   }
   const tracks = localGet<Track[]>("spotify_clone_tracks", []);

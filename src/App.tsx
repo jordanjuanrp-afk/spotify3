@@ -106,6 +106,7 @@ export default function App() {
   const animationFrameRef = useRef<number | null>(null);
   const allTracksRef = useRef(allTracks);
   allTracksRef.current = allTracks;
+  const handleNextTrackRef = useRef<(() => void) | null>(null);
 
   const handleLogin = (name: string, email: string) => {
     const userData = { name, email };
@@ -460,7 +461,6 @@ export default function App() {
     }
   };
 
-  const handleNextTrackRef = useRef(handleNextTrack);
   handleNextTrackRef.current = handleNextTrack;
 
   const handlePreviousTrack = () => {
