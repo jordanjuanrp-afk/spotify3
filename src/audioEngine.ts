@@ -171,6 +171,12 @@ class AudioEngine {
     return this.usingUploadedFile;
   }
 
+  public seek(timeInSeconds: number) {
+    if (this.mediaElement && this.usingUploadedFile) {
+      this.mediaElement.currentTime = timeInSeconds;
+    }
+  }
+
   private stopAllActiveVoices() {
     // Simply let them fade or clear array
     this.activeNodes = [];

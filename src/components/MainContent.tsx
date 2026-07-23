@@ -41,6 +41,7 @@ interface MainContentProps {
   onRemoveTrackFromPlaylist: (playlistId: string, trackId: string) => void;
   onRemoveTrack: (trackId: string) => void;
   onPlayPlaylist: (playlist: Playlist) => void;
+  userName?: string;
 }
 
 export default function MainContent({
@@ -60,6 +61,7 @@ export default function MainContent({
   onRemoveTrackFromPlaylist,
   onRemoveTrack,
   onPlayPlaylist,
+  userName,
 }: MainContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"tudo" | "musica" | "podcasts">("tudo");
@@ -211,7 +213,7 @@ export default function MainContent({
             <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] sm:text-xs text-white font-bold">
               J
             </div>
-            <span className="text-[10px] sm:text-xs font-bold text-white max-w-[60px] sm:max-w-[100px] truncate">Jordynesjuan</span>
+            <span className="text-[10px] sm:text-xs font-bold text-white max-w-[60px] sm:max-w-[100px] truncate">{userName || "Usuário"}</span>
           </div>
         </div>
       </header>
@@ -412,7 +414,7 @@ export default function MainContent({
           {/* Curated section (Feito para Jordynesjuan) */}
           <section className="mt-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Feito para Jordynesjuan</h2>
+              <h2 className="text-2xl font-bold text-white">Feito para {userName || "você"}</h2>
               <button className="text-zinc-400 hover:text-white font-bold text-xs transition">Mostrar tudo</button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -629,7 +631,7 @@ export default function MainContent({
                 {activePlaylist.description || "Aproveite esta seleção de faixas exclusivas brasileiras."}
               </p>
               <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-zinc-300">
-                <span className="text-white">Jordynesjuan</span>
+                <span className="text-white">{userName || "Usuário"}</span>
                 <span>•</span>
                 <span>{playlistTracks.length} {playlistTracks.length === 1 ? "música" : "músicas"}</span>
               </div>

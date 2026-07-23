@@ -250,7 +250,8 @@ export default function App() {
   useEffect(() => {
     if (currentTrack) {
       try {
-        localStorage.setItem("spotify_clone_current_track", JSON.stringify(currentTrack));
+        const { audioFile, ...trackWithoutAudio } = currentTrack;
+        localStorage.setItem("spotify_clone_current_track", JSON.stringify(trackWithoutAudio));
       } catch (err) {
         console.error("Erro ao salvar currentTrack no localStorage:", err);
       }
@@ -271,12 +272,12 @@ export default function App() {
           const currentTime = Math.floor(mediaEl.currentTime);
           setProgress(currentTime);
           if (mediaEl.ended) {
-            handleNextTrack();
+            handleNextTrackRef.current();
           }
         } else {
           setProgress((prev) => {
             if (prev >= currentTrack.duration) {
-              handleNextTrack();
+              handleNextTrackRef.current();
               return 0;
             }
             return prev + 1;
@@ -316,7 +317,6 @@ export default function App() {
           ctx.lineTo(i, y);
         }
         ctx.stroke();
-        animationFrameRef.current = requestAnimationFrame(draw);
         return;
       }
 
@@ -459,6 +459,9 @@ export default function App() {
       handlePlayTrack(nextTrack, playlistContextId || undefined);
     }
   };
+
+  const handleNextTrackRef = useRef(handleNextTrack);
+  handleNextTrackRef.current = handleNextTrack;
 
   const handlePreviousTrack = () => {
     if (!currentTrack) return;
@@ -788,6 +791,7 @@ export default function App() {
             onRemoveTrack={handleRemoveTrack}
             onPlayPlaylist={handlePlayPlaylist}
             isAdmin={isAdmin}
+            userName={user.name}
           />
 
           {activeTab === "profile" && (
@@ -838,6 +842,7 @@ export default function App() {
         }}
         activeRightSidebar={activeRightSidebar}
         onToggleRightSidebar={() => setActiveRightSidebar((prev) => !prev)}
+        onSeek={(time) => audioEngine.seek(time)}
       />
 
       <nav className="md:hidden flex items-center justify-around bg-[#121212] border-t border-zinc-900 px-2 py-1.5 shrink-0">

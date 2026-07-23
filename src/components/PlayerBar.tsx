@@ -39,6 +39,7 @@ interface PlayerBarProps {
   onToggleLyrics: () => void;
   activeRightSidebar: boolean;
   onToggleRightSidebar: () => void;
+  onSeek: (time: number) => void;
 }
 
 export default function PlayerBar({
@@ -63,6 +64,7 @@ export default function PlayerBar({
   onToggleLyrics,
   activeRightSidebar,
   onToggleRightSidebar,
+  onSeek,
 }: PlayerBarProps) {
   // Helper to format seconds to MM:SS
   const formatTime = (secs: number) => {
@@ -190,7 +192,11 @@ export default function PlayerBar({
               min={0}
               max={duration || 100}
               value={progress}
-              onChange={(e) => onProgressChange(Number(e.target.value))}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                onProgressChange(val);
+                onSeek(val);
+              }}
               disabled={!currentTrack}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-default"
             />
