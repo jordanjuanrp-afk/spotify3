@@ -23,8 +23,6 @@ import {
   updatePlaylist,
 } from "./api";
 
-const LazyBackgroundBoxes = React.lazy(() => import("./components/BackgroundBoxes"));
-
 export default function App() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
     const saved = localStorage.getItem("spotify_clone_user");
@@ -611,8 +609,7 @@ export default function App() {
       onTouchMove={handleTouchMove}
     >
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <React.Suspense fallback={null}>
-          <LazyBackgroundBoxes
+        <BackgroundBoxes
             backgroundColor="transparent"
             boxSize={35}
             borderWidth={1}
@@ -628,7 +625,6 @@ export default function App() {
               color6: "#121212",
             }}
           />
-        </React.Suspense>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col overflow-hidden">

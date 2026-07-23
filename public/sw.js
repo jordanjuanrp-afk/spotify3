@@ -1,4 +1,4 @@
-const CACHE_NAME = "spotify3-v3";
+const CACHE_NAME = "spotify3-v4";
 const ASSETS = [
   "/",
   "/index.html",
@@ -26,7 +26,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Skip caching for Capacitor native protocol
   if (url.protocol === "capacitor:" || url.protocol === "capacitor-js:") {
     event.respondWith(
       fetch(event.request).catch(() => new Response("Offline", { status: 503 }))
@@ -34,7 +33,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Skip caching for API requests - always go to network
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(event.request).catch(() => new Response("API unavailable", { status: 503 }))
@@ -42,17 +40,39 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Skip caching for data: and blob: URLs
   if (url.protocol === "data:" || url.protocol === "blob:") {
     return;
   }
 
-  // Skip caching for Vite HMR WebSocket
-  if (url.pathname === "/" && event.request.headers.get("upgrade") === "websocket") {
+  if (event.request.headers.get("upgrade") === "websocket") {
     return;
   }
 
+  // HTML: network-first (prevents stale index.html with dead chunk refs)
+  if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // JS/CSS/images: cache-first with network fallback
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      });
+    })
   );
 });
