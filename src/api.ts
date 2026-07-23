@@ -16,7 +16,6 @@ function localSet(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// Upload audio file to Supabase Storage, return public URL
 export async function uploadAudio(trackId: string, file: File): Promise<string> {
   if (!supabase) throw new Error("Supabase not configured");
 
@@ -33,10 +32,8 @@ export async function uploadAudio(trackId: string, file: File): Promise<string> 
   return urlData.publicUrl;
 }
 
-// Delete audio file from Supabase Storage
 export async function deleteAudioFromStorage(trackId: string): Promise<void> {
   if (!supabase) return;
-  // List files matching the trackId prefix
   const { data: files } = await supabase.storage.from(BUCKET_NAME).list("", { search: trackId });
   if (files && files.length > 0) {
     const paths = files.filter((f) => f.name.startsWith(trackId)).map((f) => f.name);
@@ -70,7 +67,7 @@ export async function fetchTracks(): Promise<Track[]> {
 
 export async function createTrack(track: Track, userEmail?: string): Promise<Track> {
   if (supabase) {
-    const { error } = await supabase.from("tracks").upsert({
+    const row: Record<string, unknown> = {
       id: track.id,
       title: track.title,
       artist: track.artist,
@@ -81,9 +78,11 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       lyrics: track.lyrics ?? null,
       liked: track.liked ?? false,
       isPodcast: track.isPodcast ?? false,
-      audio_url: track.audioUrl ?? null,
-      user_email: userEmail ?? null,
-    }, { onConflict: "id" });
+    };
+    if (track.audioUrl) row.audio_url = track.audioUrl;
+    if (userEmail) row.user_email = userEmail;
+
+    const { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
     if (error) throw error;
     return track;
   }
@@ -106,7 +105,7 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (data.lyrics !== undefined) update.lyrics = data.lyrics;
     if (data.liked !== undefined) update.liked = data.liked;
     if (data.isPodcast !== undefined) update.isPodcast = data.isPodcast;
-    if (data.audioUrl !== undefined) update.audio_url = data.audioUrl;
+    if (data.audioUrl) update.audio_url = data.audioUrl;
     const { error } = await supabase.from("tracks").update(update).eq("id", id);
     if (error) throw error;
     return { ...data, id } as Track;

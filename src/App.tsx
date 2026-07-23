@@ -121,50 +121,69 @@ export default function App() {
 
   // Load data from server on mount
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       try {
         const [tracks, playlistsData] = await Promise.all([
-          fetchTracks().catch(() => null),
-          fetchPlaylists().catch(() => null),
+          fetchTracks().catch((e) => { console.error("fetchTracks:", e); return null; }),
+          fetchPlaylists().catch((e) => { console.error("fetchPlaylists:", e); return null; }),
         ]);
+
+        if (cancelled) return;
+
         if (tracks && tracks.length > 0) {
           setAllTracks((prev) => {
             const serverIds = new Set(tracks.map((t) => t.id));
             const localOnly = prev.filter((t) => !serverIds.has(t.id));
             return [...tracks, ...localOnly];
           });
-          // Push local-only tracks to Supabase so they appear for all users
-          const localTracks = allTracksRef.current;
-          const serverIds = new Set(tracks.map((t) => t.id));
-          const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+        }
+
+        if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
+
+        setDataLoaded(true);
+
+        // After dataLoaded, sync local-only tracks to server
+        setTimeout(() => {
+          if (cancelled) return;
+          const current = allTracksRef.current;
+          const serverIds = new Set((tracks ?? []).map((t) => t.id));
+          const localOnly = current.filter((t) => !serverIds.has(t.id));
           for (const track of localOnly) {
-            createTrack(track, user?.email).catch(() => {});
+            createTrack(track, user?.email).catch((e) =>
+              console.error("Erro ao sincronizar track local:", track.id, e)
+            );
           }
+
+          // Also push playlists that don't exist on server
+          if (playlistsData) {
+            const serverPlaylistIds = new Set(playlistsData.map((p) => p.id));
+            const localOnlyPlaylists = playlists.filter((p) => !serverPlaylistIds.has(p.id));
+            for (const pl of localOnlyPlaylists) {
+              createPlaylist(pl).catch((e) =>
+                console.error("Erro ao sincronizar playlist local:", pl.id, e)
+              );
+            }
+          }
+
           // Background: download and cache audio from audioUrl for all tracks
-          for (const track of tracks) {
+          for (const track of (tracks ?? [])) {
             if (track.audioUrl) {
               getAudioFile(track.id).then((cached) => {
-                if (!cached) {
+                if (!cached && !cancelled) {
                   downloadAndCacheAudio(track.id, track.audioUrl!).catch(() => {});
                 }
               });
             }
           }
-        } else if (tracks && tracks.length === 0) {
-          // Server is empty, push all local tracks
-          const localTracks = allTracksRef.current;
-          for (const track of localTracks) {
-            createTrack(track, user?.email).catch(() => {});
-          }
-        }
-        if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
+        }, 0);
       } catch (err) {
         console.error("Erro ao carregar dados do servidor:", err);
-      } finally {
         setDataLoaded(true);
       }
     };
     loadData();
+    return () => { cancelled = true; };
   }, []);
 
   // Polling: sync every 5 seconds - server is source of truth
@@ -177,11 +196,15 @@ export default function App() {
           fetchPlaylists().catch(() => null),
         ]);
         if (tracks) {
+          setAllTracks((prev) => {
+            const serverIds = new Set(tracks.map((t) => t.id));
+            const localOnly = prev.filter((t) => !serverIds.has(t.id));
+            return [...tracks, ...localOnly];
+          });
+          // Push local-only tracks to Supabase
           const localTracks = allTracksRef.current;
           const serverIds = new Set(tracks.map((t) => t.id));
           const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
-          setAllTracks([...tracks, ...localOnly]);
-          // Push local-only tracks to Supabase
           for (const track of localOnly) {
             createTrack(track, user?.email).catch(() => {});
           }
