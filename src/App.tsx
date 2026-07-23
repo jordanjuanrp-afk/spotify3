@@ -57,6 +57,7 @@ export default function App() {
     return [];
   });
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [syncTrigger, setSyncTrigger] = useState(0);
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
     const saved = localStorage.getItem("spotify_clone_current_track");
@@ -145,25 +146,27 @@ export default function App() {
   // Polling: sync new tracks every 5 seconds
   useEffect(() => {
     if (!dataLoaded) return;
-    const interval = setInterval(async () => {
+    const syncFromServer = async () => {
       try {
         const [tracks, playlistsData] = await Promise.all([
           fetchTracks().catch(() => null),
           fetchPlaylists().catch(() => null),
         ]);
-        if (tracks && tracks.length > 0) {
+        if (tracks) {
           const localTracks = allTracksRef.current;
           const serverIds = new Set(tracks.map((t) => t.id));
           const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
           setAllTracks([...tracks, ...localOnly]);
         }
-        if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
+        if (playlistsData) setPlaylists(playlistsData);
       } catch {
         // silent fail
       }
-    }, 5000);
+    };
+    syncFromServer();
+    const interval = setInterval(syncFromServer, 5000);
     return () => clearInterval(interval);
-  }, [dataLoaded]);
+  }, [dataLoaded, syncTrigger]);
 
   useEffect(() => {
     try {
@@ -444,6 +447,7 @@ export default function App() {
     if (updatedPlaylist) {
       try {
         await updatePlaylist(playlistId, updatedPlaylist);
+        setSyncTrigger((t) => t + 1);
       } catch (err) {
         console.error("Erro ao atualizar playlist no servidor:", err);
       }
@@ -464,6 +468,7 @@ export default function App() {
     if (updatedPlaylist) {
       try {
         await updatePlaylist(playlistId, updatedPlaylist);
+        setSyncTrigger((t) => t + 1);
       } catch (err) {
         console.error("Erro ao atualizar playlist no servidor:", err);
       }
@@ -504,6 +509,7 @@ export default function App() {
     if (updatedTrack) {
       try {
         await updateTrack(trackId, { liked: updatedTrack.liked });
+        setSyncTrigger((t) => t + 1);
       } catch (err) {
         console.error("Erro ao atualizar like no servidor:", err);
       }
@@ -516,35 +522,37 @@ export default function App() {
 
     if (audioFile) {
       const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        try {
-          await saveAudioFile(newId, base64);
-        } catch (err) {
-          console.error("Erro ao salvar áudio:", err);
-        }
-        const trackWithAudio = { ...newTrack, audioFile: base64 };
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(audioFile);
+      });
+      const trackWithAudio = { ...newTrack, audioFile: base64 };
+      try {
+        await saveAudioFile(newId, base64);
+      } catch (err) {
+        console.error("Erro ao salvar áudio local:", err);
+      }
+      try {
+        await createTrack(trackWithAudio);
         setAllTracks((prev) => [...prev, trackWithAudio]);
         setActiveTab("search");
-        try {
-          await createTrack(trackWithAudio);
-        } catch (err) {
-          console.error("Erro ao enviar track para o servidor:", err);
-        }
-      };
-      reader.onerror = () => {
-        console.error("Erro ao ler arquivo");
-        setAllTracks((prev) => [...prev, newTrack]);
-        setActiveTab("search");
-      };
-      reader.readAsDataURL(audioFile);
-    } else {
-      setAllTracks((prev) => [...prev, newTrack]);
-      setActiveTab("search");
-      try {
-        await createTrack(newTrack);
+        setSyncTrigger((t) => t + 1);
       } catch (err) {
         console.error("Erro ao enviar track para o servidor:", err);
+        setAllTracks((prev) => [...prev, trackWithAudio]);
+        setActiveTab("search");
+      }
+    } else {
+      try {
+        await createTrack(newTrack);
+        setAllTracks((prev) => [...prev, newTrack]);
+        setActiveTab("search");
+        setSyncTrigger((t) => t + 1);
+      } catch (err) {
+        console.error("Erro ao enviar track para o servidor:", err);
+        setAllTracks((prev) => [...prev, newTrack]);
+        setActiveTab("search");
       }
     }
   };
@@ -571,19 +579,17 @@ export default function App() {
         }
       }
 
-      newTracks.push(newTrack);
+      try {
+        await createTrack(newTrack);
+        newTracks.push(newTrack);
+      } catch (err) {
+        console.error("Erro ao enviar track para o servidor:", err);
+        newTracks.push(newTrack);
+      }
     }
 
     setAllTracks((prev) => [...prev, ...newTracks]);
     setActiveTab("search");
-
-    for (const track of newTracks) {
-      try {
-        await createTrack(track);
-      } catch (err) {
-        console.error("Erro ao enviar track para o servidor:", err);
-      }
-    }
   };
 
   const handleRemoveTrack = async (trackId: string) => {
@@ -597,6 +603,7 @@ export default function App() {
     }
     try {
       await deleteTrack(trackId);
+      setSyncTrigger((t) => t + 1);
     } catch (err) {
       console.error("Erro ao deletar track no servidor:", err);
     }
