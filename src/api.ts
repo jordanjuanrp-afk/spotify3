@@ -1,17 +1,6 @@
 import { Track, Playlist } from "./types";
 import { supabase } from "./supabase";
 
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const API_BASE = import.meta.env.VITE_API_URL || "/api";
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-// LocalStorage helpers
 function localGet<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -65,10 +54,11 @@ export async function createTrack(track: Track): Promise<Track> {
     if (error) throw error;
     return track;
   }
-  return request<Track>("/tracks", {
-    method: "POST",
-    body: JSON.stringify(track),
-  }).catch(() => track);
+  const tracks = localGet<Track[]>("spotify_clone_tracks", []);
+  const idx = tracks.findIndex((t) => t.id === track.id);
+  if (idx >= 0) tracks[idx] = track; else tracks.push(track);
+  localSet("spotify_clone_tracks", tracks.map(({ audioFile, ...rest }) => rest));
+  return track;
 }
 
 export async function updateTrack(id: string, data: Partial<Track>): Promise<Track> {
@@ -87,10 +77,11 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (error) throw error;
     return { ...data, id } as Track;
   }
-  return request<Track>(`/tracks/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const tracks = localGet<Track[]>("spotify_clone_tracks", []);
+  const idx = tracks.findIndex((t) => t.id === id);
+  if (idx >= 0) tracks[idx] = { ...tracks[idx], ...data };
+  localSet("spotify_clone_tracks", tracks.map(({ audioFile, ...rest }) => rest));
+  return { ...data, id } as Track;
 }
 
 export async function deleteTrack(id: string): Promise<void> {
@@ -99,7 +90,8 @@ export async function deleteTrack(id: string): Promise<void> {
     if (error) throw error;
     return;
   }
-  await request(`/tracks/${id}`, { method: "DELETE" });
+  const tracks = localGet<Track[]>("spotify_clone_tracks", []);
+  localSet("spotify_clone_tracks", tracks.filter((t) => t.id !== id).map(({ audioFile, ...rest }) => rest));
 }
 
 // Playlists
@@ -132,10 +124,11 @@ export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
     if (error) throw error;
     return playlist;
   }
-  return request<Playlist>("/playlists", {
-    method: "POST",
-    body: JSON.stringify(playlist),
-  }).catch(() => playlist);
+  const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);
+  const idx = playlists.findIndex((p) => p.id === playlist.id);
+  if (idx >= 0) playlists[idx] = playlist; else playlists.push(playlist);
+  localSet("spotify_clone_playlists", playlists);
+  return playlist;
 }
 
 export async function updatePlaylist(id: string, data: Partial<Playlist>): Promise<Playlist> {
@@ -150,10 +143,11 @@ export async function updatePlaylist(id: string, data: Partial<Playlist>): Promi
     if (error) throw error;
     return { ...data, id } as Playlist;
   }
-  return request<Playlist>(`/playlists/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);
+  const idx = playlists.findIndex((p) => p.id === id);
+  if (idx >= 0) playlists[idx] = { ...playlists[idx], ...data };
+  localSet("spotify_clone_playlists", playlists);
+  return { ...data, id } as Playlist;
 }
 
 export async function deletePlaylist(id: string): Promise<void> {
@@ -162,5 +156,6 @@ export async function deletePlaylist(id: string): Promise<void> {
     if (error) throw error;
     return;
   }
-  await request(`/playlists/${id}`, { method: "DELETE" });
+  const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);
+  localSet("spotify_clone_playlists", playlists.filter((p) => p.id !== id));
 }
