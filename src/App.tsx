@@ -54,8 +54,16 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch { /* ignore */ }
+        if (Array.isArray(parsed)) {
+          let deletedIds: string[] = [];
+          try {
+            const raw = localStorage.getItem("spotify_clone_deleted_ids");
+            if (raw) deletedIds = JSON.parse(raw);
+          } catch {}
+          const deleted = new Set(deletedIds);
+          return parsed.filter((t: Track) => !deleted.has(t.id));
+        }
+      } catch {}
     }
     return [];
   });
@@ -110,6 +118,28 @@ export default function App() {
   const allTracksRef = useRef(allTracks);
   allTracksRef.current = allTracks;
   const handleNextTrackRef = useRef<(() => void) | null>(null);
+
+  // Track IDs that were permanently deleted — never re-sync these
+  const deletedTrackIdsRef = useRef<Set<string>>(new Set(
+    (() => {
+      try {
+        const raw = localStorage.getItem("spotify_clone_deleted_ids");
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    })()
+  ));
+
+  const markDeleted = (id: string) => {
+    deletedTrackIdsRef.current.add(id);
+    try {
+      localStorage.setItem(
+        "spotify_clone_deleted_ids",
+        JSON.stringify([...deletedTrackIdsRef.current])
+      );
+    } catch {}
+  };
 
   const handleLogin = (name: string, email: string) => {
     const userData = { name, email };
@@ -167,11 +197,13 @@ export default function App() {
           if (tracksWithAudio.length > 0) {
             clearAllAudioUrls().catch(() => {});
           }
-          cleanTracks = tracks.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t));
+          cleanTracks = tracks
+            .map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t))
+            .filter((t) => !deletedTrackIdsRef.current.has(t.id));
 
           setAllTracks((prev) => {
             const serverIds = new Set(cleanTracks.map((t) => t.id));
-            const localOnly = prev.filter((t) => !serverIds.has(t.id));
+            const localOnly = prev.filter((t) => !serverIds.has(t.id) && !deletedTrackIdsRef.current.has(t.id));
             return [...cleanTracks, ...localOnly];
           });
         }
@@ -233,15 +265,24 @@ export default function App() {
           fetchPlaylists().catch(() => null),
         ]);
         if (tracks) {
+          const liveTracks = tracks.filter((t) => !deletedTrackIdsRef.current.has(t.id));
+
+          // Re-delete tracks from Supabase that we previously deleted but server still has
+          for (const id of deletedTrackIdsRef.current) {
+            if (tracks.some((t) => t.id === id)) {
+              deleteTrack(id).catch(() => {});
+            }
+          }
+
           setAllTracks((prev) => {
-            const serverIds = new Set(tracks.map((t) => t.id));
-            const localOnly = prev.filter((t) => !serverIds.has(t.id));
-            return [...tracks, ...localOnly];
+            const serverIds = new Set(liveTracks.map((t) => t.id));
+            const localOnly = prev.filter((t) => !serverIds.has(t.id) && !deletedTrackIdsRef.current.has(t.id));
+            return [...liveTracks, ...localOnly];
           });
-          // Push local-only tracks to Supabase
+          // Push local-only tracks to Supabase (skip deleted)
           const localTracks = allTracksRef.current;
-          const serverIds = new Set(tracks.map((t) => t.id));
-          const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+          const serverIds = new Set(liveTracks.map((t) => t.id));
+          const localOnly = localTracks.filter((t) => !serverIds.has(t.id) && !deletedTrackIdsRef.current.has(t.id));
           if (localOnly.length > 0) {
             console.log(`[SpotifyClone] Sincronizando ${localOnly.length} faixas locais para Supabase...`);
           }
@@ -726,6 +767,7 @@ export default function App() {
   };
 
   const handleRemoveTrack = async (trackId: string) => {
+    markDeleted(trackId);
     setAllTracks((prev) => prev.filter((t) => t.id !== trackId));
     await deleteAudioFile(trackId).catch(() => {});
     if (currentTrack?.id === trackId) {
