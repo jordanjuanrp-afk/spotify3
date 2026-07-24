@@ -246,3 +246,15 @@ export async function deletePlaylist(id: string): Promise<void> {
   const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);
   localSet("spotify_clone_playlists", playlists.filter((p) => p.id !== id));
 }
+
+// Remove audio_url from all tracks (files no longer exist in Storage)
+export async function clearAllAudioUrls(): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("tracks")
+    .update({ audio_url: null })
+    .not("audio_url", "is", null);
+  if (error) {
+    console.error("Erro ao limpar audio_url:", error.message);
+  }
+}

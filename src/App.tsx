@@ -22,6 +22,7 @@ import {
   createPlaylist,
   updatePlaylist,
   uploadAudio,
+  clearAllAudioUrls,
 } from "./api";
 import { supabase } from "./supabase";
 
@@ -148,6 +149,21 @@ export default function App() {
             const localOnly = prev.filter((t) => !serverIds.has(t.id));
             return [...tracks, ...localOnly];
           });
+
+          // One-time cleanup: remove broken audio_url from DB (files no longer in Storage)
+          if (!localStorage.getItem("spotify3_audio_urls_cleaned")) {
+            const tracksWithAudio = tracks.filter((t) => t.audioUrl);
+            if (tracksWithAudio.length > 0) {
+              clearAllAudioUrls().then(() => {
+                localStorage.setItem("spotify3_audio_urls_cleaned", "1");
+                setAllTracks((prev) =>
+                  prev.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t))
+                );
+              });
+            } else {
+              localStorage.setItem("spotify3_audio_urls_cleaned", "1");
+            }
+          }
         }
 
         if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
