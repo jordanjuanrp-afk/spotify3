@@ -61,7 +61,7 @@ export async function fetchTracks(): Promise<Track[]> {
     try {
       const { data, error } = await supabase.from("tracks").select("*");
       if (error) {
-        console.error("Supabase fetchTracks error:", error.message, error);
+        console.error("Erro ao buscar faixas do Supabase:", error.message, error);
         return localGet<Track[]>("spotify_clone_tracks", []);
       }
       const tracks = (data ?? []).map((r) => ({
@@ -85,7 +85,7 @@ export async function fetchTracks(): Promise<Track[]> {
       }
       return tracks;
     } catch (e) {
-      console.error("fetchTracks exception:", e);
+      console.error("Excecao ao buscar faixas:", e);
       return localGet<Track[]>("spotify_clone_tracks", []);
     }
   }
@@ -112,10 +112,10 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
     const { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
 
     if (error) {
-      console.warn("createTrack upsert failed, trying insert:", error.message);
+      console.warn("Falha ao atualizar faixa, tentando inserir:", error.message);
       const { error: insertErr } = await supabase.from("tracks").insert(row);
       if (insertErr) {
-        console.error("createTrack insert also failed:", insertErr.message);
+        console.error("Insercao de faixa tambem falhou:", insertErr.message);
         throw insertErr;
       }
     }
@@ -170,7 +170,7 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
     try {
       const { data, error } = await supabase.from("playlists").select("*");
       if (error) {
-        console.error("Supabase fetchPlaylists error:", error.message);
+        console.error("Erro ao buscar playlists do Supabase:", error.message);
         return localGet<Playlist[]>("spotify_clone_playlists", []);
       }
       return (data ?? []).map((r) => ({
@@ -182,7 +182,7 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
         isCustom: r.isCustom ?? false,
       }));
     } catch (e) {
-      console.error("fetchPlaylists exception:", e);
+      console.error("Excecao ao buscar playlists:", e);
       return localGet<Playlist[]>("spotify_clone_playlists", []);
     }
   }
@@ -202,10 +202,10 @@ export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
 
     const { error } = await supabase.from("playlists").upsert(row, { onConflict: "id" });
     if (error) {
-      console.warn("createPlaylist upsert failed, trying insert:", error.message);
+      console.warn("Falha ao atualizar playlist, tentando inserir:", error.message);
       const { error: insertErr } = await supabase.from("playlists").insert(row);
       if (insertErr) {
-        console.error("createPlaylist insert also failed:", insertErr.message);
+        console.error("Insercao de playlist tambem falhou:", insertErr.message);
         throw insertErr;
       }
     }

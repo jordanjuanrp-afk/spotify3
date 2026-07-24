@@ -136,9 +136,9 @@ export default function App() {
         if (cancelled) return;
 
         const trackCount = tracks?.length ?? 0;
-        console.log("[SpotifyClone] Tracks recebidas:", trackCount, "| Playlists:", playlistsData?.length ?? 0);
+        console.log("[SpotifyClone] Faixas recebidas:", trackCount, "| Playlists:", playlistsData?.length ?? 0);
         setDbStatus(supabase
-          ? (trackCount > 0 ? `ok (${trackCount} faixas)` : "vazio - tabela tracks sem dados")
+          ? (trackCount > 0 ? `ok (${trackCount} faixas)` : "vazio - tabela faixas sem dados")
           : "sem_supabase"
         );
 
@@ -162,7 +162,7 @@ export default function App() {
           const localOnly = current.filter((t) => !serverIds.has(t.id));
           for (const track of localOnly) {
             createTrack(track, user?.email).catch((e) =>
-              console.error("Erro ao sincronizar track local:", track.id, e)
+              console.error("Erro ao sincronizar faixa local:", track.id, e)
             );
           }
 
@@ -217,11 +217,11 @@ export default function App() {
           const serverIds = new Set(tracks.map((t) => t.id));
           const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
           if (localOnly.length > 0) {
-            console.log(`[SpotifyClone] Sincronizando ${localOnly.length} tracks locais para Supabase...`);
+            console.log(`[SpotifyClone] Sincronizando ${localOnly.length} faixas locais para Supabase...`);
           }
           for (const track of localOnly) {
             createTrack(track, user?.email).catch((e) =>
-              console.error("[SpotifyClone] Erro ao sincronizar track:", track.id, e?.message)
+              console.error("[SpotifyClone] Erro ao sincronizar faixa:", track.id, e?.message)
             );
           }
         }
@@ -251,7 +251,7 @@ export default function App() {
       const tracksToSave = allTracks.map(({ audioFile, ...rest }) => rest);
       localStorage.setItem("spotify_clone_tracks", JSON.stringify(tracksToSave));
     } catch (err) {
-      console.error("Erro ao salvar tracks no localStorage:", err);
+      console.error("Erro ao salvar faixas no localStorage:", err);
     }
   }, [allTracks]);
 
@@ -269,7 +269,7 @@ export default function App() {
         const { audioFile, ...trackWithoutAudio } = currentTrack;
         localStorage.setItem("spotify_clone_current_track", JSON.stringify(trackWithoutAudio));
       } catch (err) {
-        console.error("Erro ao salvar currentTrack no localStorage:", err);
+        console.error("Erro ao salvar faixa atual no localStorage:", err);
       }
     }
   }, [currentTrack]);
@@ -649,7 +649,7 @@ export default function App() {
       setActiveTab("search");
       setSyncTrigger((t) => t + 1);
     } catch (err) {
-      console.error("Erro ao enviar track para o servidor:", err);
+      console.error("Erro ao enviar faixa para o servidor:", err);
       setAllTracks((prev) => [...prev, newTrack]);
       setActiveTab("search");
     }
@@ -687,7 +687,7 @@ export default function App() {
         await createTrack(newTrack, user?.email);
         newTracks.push(newTrack);
       } catch (err) {
-        console.error("Erro ao enviar track para o servidor:", err);
+        console.error("Erro ao enviar faixa para o servidor:", err);
         newTracks.push(newTrack);
       }
     }
@@ -709,7 +709,7 @@ export default function App() {
       await deleteTrack(trackId);
       setSyncTrigger((t) => t + 1);
     } catch (err) {
-      console.error("Erro ao deletar track no servidor:", err);
+      console.error("Erro ao deletar faixa no servidor:", err);
     }
   };
 
@@ -778,7 +778,7 @@ export default function App() {
           
           {dbStatus !== "ok" && dbStatus !== "connecting" && (
             <div className={`px-3 py-1.5 text-[10px] font-mono z-40 ${dbStatus.includes("vazio") || dbStatus === "sem_supabase" ? "bg-yellow-500/20 text-yellow-400 border-b border-yellow-500/30" : "bg-green-500/20 text-green-400 border-b border-green-500/30"}`}>
-              DB: {dbStatus} | Tracks locais: {allTracks.length}
+              DB: {dbStatus} | Faixas locais: {allTracks.length}
             </div>
           )}
 

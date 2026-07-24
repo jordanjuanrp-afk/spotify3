@@ -40,7 +40,7 @@ class AudioEngine {
       this.analyser.connect(this.ctx.destination);
       this.masterGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     } catch (e) {
-      console.error("Failed to initialize AudioContext:", e);
+      console.error("Falha ao inicializar AudioContext:", e);
     }
   }
 
