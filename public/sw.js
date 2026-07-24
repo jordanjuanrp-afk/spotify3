@@ -1,4 +1,4 @@
-const CACHE_NAME = "spotify3-v7";
+const CACHE_NAME = "spotify3-v8";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -25,12 +25,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.hostname !== self.location.hostname) {
-    return;
-  }
-
+  if (url.hostname !== self.location.hostname) return;
   if (url.protocol === "data:" || url.protocol === "blob:") return;
   if (event.request.headers.get("upgrade") === "websocket") return;
+
+  const OFFLINE_RESPONSE = new Response("Offline", {
+    status: 503,
+    headers: { "Content-Type": "text/plain" },
+  });
 
   // HTML: network-first
   if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html")) {
@@ -41,7 +43,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then((cached) => cached || OFFLINE_RESPONSE))
     );
     return;
   }
@@ -56,7 +58,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      });
+      }).catch(() => OFFLINE_RESPONSE);
     })
   );
 });

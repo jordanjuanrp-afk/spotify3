@@ -16,20 +16,32 @@ function localSet(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-export async function uploadAudio(trackId: string, file: File): Promise<string> {
-  if (!supabase) throw new Error("Supabase not configured");
+let bucketMissingLogged = false;
 
-  const ext = file.name.split(".").pop() || "mp3";
-  const path = `${trackId}.${ext}`;
+export async function uploadAudio(trackId: string, file: File): Promise<string | null> {
+  if (!supabase) return null;
 
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(path, file, { contentType: file.type, upsert: true });
+  try {
+    const ext = file.name.split(".").pop() || "mp3";
+    const path = `${trackId}.${ext}`;
 
-  if (error) throw error;
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(path, file, { contentType: file.type, upsert: true });
 
-  const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
-  return urlData.publicUrl;
+    if (error) {
+      if (!bucketMissingLogged) {
+        console.warn("[SpotifyClone] Upload audio falhou (bucket 'audio' pode não existir no Supabase Storage):", error.message);
+        bucketMissingLogged = true;
+      }
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch {
+    return null;
+  }
 }
 
 export async function deleteAudioFromStorage(trackId: string): Promise<void> {

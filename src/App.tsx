@@ -637,7 +637,7 @@ export default function App() {
       // Upload to Supabase Storage for all users
       try {
         const audioUrl = await uploadAudio(newId, audioFile);
-        newTrack.audioUrl = audioUrl;
+        if (audioUrl) newTrack.audioUrl = audioUrl;
       } catch (err) {
         console.error("Erro ao enviar áudio para Supabase Storage:", err);
       }
@@ -677,7 +677,7 @@ export default function App() {
         // Upload to Supabase Storage
         try {
           const audioUrl = await uploadAudio(newId, item.audioFile);
-          newTrack.audioUrl = audioUrl;
+          if (audioUrl) newTrack.audioUrl = audioUrl;
         } catch (err) {
           console.error("Erro ao enviar áudio para Supabase Storage:", err);
         }
