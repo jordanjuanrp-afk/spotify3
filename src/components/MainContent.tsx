@@ -67,6 +67,7 @@ export default function MainContent({
   const [filterType, setFilterType] = useState<"tudo" | "musica" | "podcasts">("tudo");
   const [preSaved, setPreSaved] = useState<Record<string, boolean>>({});
   const [showPreSaveAlert, setShowPreSaveAlert] = useState<string | null>(null);
+  const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
 
   // Custom playlist track search (to add tracks to custom playlists)
   const [customSearchQuery, setCustomSearchQuery] = useState("");
@@ -293,9 +294,9 @@ export default function MainContent({
                         <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onRemoveTrack(track.id);
+                              setTrackToDelete(track);
                             }}
-                            className="w-8 h-8 bg-red-600/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                            className="w-8 h-8 bg-red-600/80 hover:bg-red-500 rounded-full flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg"
                           >
                             <Trash2 className="w-4 h-4 text-white" />
                           </button>
@@ -498,9 +499,9 @@ export default function MainContent({
                            <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onRemoveTrack(track.id);
+                                   setTrackToDelete(track);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                                className="md:opacity-0 md:group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -555,9 +556,9 @@ export default function MainContent({
                             <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onRemoveTrack(track.id);
+                                  setTrackToDelete(track);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                                className="md:opacity-0 md:group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -750,12 +751,12 @@ export default function MainContent({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onRemoveTrack(track.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition cursor-pointer p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                                   setTrackToDelete(track);
+                                }}
+                                className="md:opacity-0 md:group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                       <span className="text-xs text-zinc-400 font-medium">
                         {min}:{sec < 10 ? "0" : ""}
                         {sec}
@@ -960,12 +961,12 @@ export default function MainContent({
                         <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onRemoveTrack(track.id);
-                            }}
-                            className="text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                                   setTrackToDelete(track);
+                                }}
+                                className="md:opacity-0 md:group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition p-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                       </div>
                     </div>
                   </div>
@@ -1124,6 +1125,44 @@ export default function MainContent({
                   <Play className="w-5 h-5 fill-current translate-x-0.5" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {trackToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Apagar música?</h3>
+                <p className="text-xs text-zinc-400">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="bg-[#2a2a2a] rounded-lg p-3 mb-5">
+              <p className="text-sm font-bold text-white truncate">{trackToDelete.title}</p>
+              <p className="text-xs text-zinc-400 truncate">{trackToDelete.artist}</p>
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setTrackToDelete(null)}
+                className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  onRemoveTrack(trackToDelete.id);
+                  setTrackToDelete(null);
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-full font-bold text-sm cursor-pointer transition"
+              >
+                Apagar
+              </button>
             </div>
           </div>
         </div>
