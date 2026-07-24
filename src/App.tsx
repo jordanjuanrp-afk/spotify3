@@ -458,7 +458,7 @@ export default function App() {
       if (!audioData && currentTrack.audioUrl) {
         audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
       }
-      const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
+      const audio = audioData || currentTrack.audioFile;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       await audioEngine.play(trackToPlay);
       setIsPlaying(true);
@@ -475,7 +475,7 @@ export default function App() {
     if (!audioData && track.audioUrl) {
       audioData = await downloadAndCacheAudio(track.id, track.audioUrl);
     }
-    const audio = audioData || track.audioFile || track.audioUrl;
+    const audio = audioData || track.audioFile;
     const trackToPlay = audio ? { ...track, audioFile: audio } : track;
     await audioEngine.play(trackToPlay);
     setIsPlaying(true);
@@ -527,7 +527,7 @@ export default function App() {
       if (!audioData && currentTrack.audioUrl) {
         audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
       }
-      const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
+      const audio = audioData || currentTrack.audioFile;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
       await audioEngine.play(trackToPlay);
       return;
