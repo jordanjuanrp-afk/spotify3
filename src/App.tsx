@@ -167,11 +167,11 @@ export default function App() {
         // After dataLoaded, sync local-only tracks to server
         setTimeout(() => {
           if (cancelled) return;
-          const current = allTracksRef.current;
           const serverIds = new Set((tracks ?? []).map((t) => t.id));
-          const localOnly = current.filter((t) => !serverIds.has(t.id));
+          const localOnly = cleanTracks.filter((t) => !serverIds.has(t.id));
           for (const track of localOnly) {
-            createTrack(track, user?.email).catch((e) =>
+            const { audioUrl: _, ...trackData } = track;
+            createTrack(trackData as Track, user?.email).catch((e) =>
               console.error("Erro ao sincronizar faixa local:", track.id, e)
             );
           }
