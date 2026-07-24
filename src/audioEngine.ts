@@ -79,7 +79,9 @@ class AudioEngine {
     this.currentTrack = track;
 
     // Check if this track has an uploaded audio file (local or remote)
-    if (track.audioFile || track.audioUrl) {
+    const hasAudioFile = !!track.audioFile && track.audioFile.length > 100;
+    const hasAudioUrl = !!track.audioUrl && track.audioUrl.startsWith("http");
+    if (hasAudioFile || hasAudioUrl) {
       this.playUploadedFile(track);
       return;
     }
@@ -135,7 +137,13 @@ class AudioEngine {
     }
 
     // Use audioUrl (Supabase Storage) if available, fallback to audioFile (base64)
-    this.mediaElement.src = track.audioFile || track.audioUrl || "";
+    const src = track.audioFile || track.audioUrl || "";
+    if (!src || !src.startsWith("http") && !src.startsWith("data:")) {
+      this.usingUploadedFile = false;
+      this.playSynth(track);
+      return;
+    }
+    this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
     // Connect to Web Audio API for visualization
@@ -145,8 +153,49 @@ class AudioEngine {
     }
 
     this.mediaElement.play().catch((err) => {
-      console.error("Failed to play uploaded audio:", err);
+      console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
+      this.usingUploadedFile = false;
+      this.playSynth(track);
     });
+  }
+
+  private playSynth(track: Track) {
+    this.usingUploadedFile = false;
+
+    switch (track.synthGenre) {
+      case "techno":
+        this.bpm = 142;
+        break;
+      case "funk":
+        this.bpm = 130;
+        break;
+      case "trap":
+        this.bpm = 135;
+        break;
+      case "sertanejo":
+        this.bpm = 108;
+        break;
+      case "electronic":
+        this.bpm = 124;
+        break;
+      case "remix":
+        this.bpm = 128;
+        break;
+      case "slowed":
+        this.bpm = 85;
+        break;
+      case "pop":
+      default:
+        this.bpm = 118;
+        break;
+    }
+
+    this.nextNoteTime = this.ctx!.currentTime;
+    this.current16thNote = 0;
+
+    if (this.schedulerId === null) {
+      this.schedulerId = window.setInterval(() => this.scheduler(), this.lookahead);
+    }
   }
 
   public pause() {
