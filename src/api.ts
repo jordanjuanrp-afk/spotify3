@@ -46,21 +46,36 @@ export async function deleteAudioFromStorage(trackId: string): Promise<void> {
 // Tracks
 export async function fetchTracks(): Promise<Track[]> {
   if (supabase) {
-    const { data, error } = await supabase.from("tracks").select("*");
-    if (error) throw error;
-    return (data ?? []).map((r) => ({
-      id: r.id,
-      title: r.title,
-      artist: r.artist,
-      album: r.album,
-      cover: r.cover,
-      duration: r.duration,
-      synthGenre: r.synthGenre,
-      lyrics: r.lyrics ?? undefined,
-      liked: r.liked ?? false,
-      isPodcast: r.isPodcast ?? false,
-      audioUrl: r.audio_url ?? undefined,
-    }));
+    try {
+      const { data, error } = await supabase.from("tracks").select("*");
+      if (error) {
+        console.error("Supabase fetchTracks error:", error.message, error);
+        return localGet<Track[]>("spotify_clone_tracks", []);
+      }
+      const tracks = (data ?? []).map((r) => ({
+        id: r.id,
+        title: r.title,
+        artist: r.artist,
+        album: r.album ?? "",
+        cover: r.cover ?? "",
+        duration: r.duration ?? 0,
+        synthGenre: r.synthGenre ?? "electronic",
+        lyrics: r.lyrics ?? undefined,
+        liked: r.liked ?? false,
+        isPodcast: r.isPodcast ?? false,
+        audioUrl: r.audio_url ?? undefined,
+      }));
+      if (tracks.length > 0) {
+        localSet("spotify_clone_tracks", tracks.map((t) => {
+          const { audioFile: _af, ...rest } = t as Track & { audioFile?: unknown };
+          return rest;
+        }));
+      }
+      return tracks;
+    } catch (e) {
+      console.error("fetchTracks exception:", e);
+      return localGet<Track[]>("spotify_clone_tracks", []);
+    }
   }
   return localGet<Track[]>("spotify_clone_tracks", []);
 }
@@ -144,16 +159,24 @@ export async function deleteTrack(id: string): Promise<void> {
 // Playlists
 export async function fetchPlaylists(): Promise<Playlist[]> {
   if (supabase) {
-    const { data, error } = await supabase.from("playlists").select("*");
-    if (error) throw error;
-    return (data ?? []).map((r) => ({
-      id: r.id,
-      name: r.name,
-      description: r.description ?? undefined,
-      cover: r.cover,
-      tracks: r.tracks ?? [],
-      isCustom: r.isCustom ?? false,
-    }));
+    try {
+      const { data, error } = await supabase.from("playlists").select("*");
+      if (error) {
+        console.error("Supabase fetchPlaylists error:", error.message);
+        return localGet<Playlist[]>("spotify_clone_playlists", []);
+      }
+      return (data ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description ?? undefined,
+        cover: r.cover ?? "",
+        tracks: r.tracks ?? [],
+        isCustom: r.isCustom ?? false,
+      }));
+    } catch (e) {
+      console.error("fetchPlaylists exception:", e);
+      return localGet<Playlist[]>("spotify_clone_playlists", []);
+    }
   }
   return localGet<Playlist[]>("spotify_clone_playlists", []);
 }

@@ -120,7 +120,7 @@ export default function App() {
     localStorage.removeItem("spotify_clone_user");
   };
 
-  // Load data from server on mount
+  // Load data from server on mount and when user changes
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
@@ -185,7 +185,7 @@ export default function App() {
     };
     loadData();
     return () => { cancelled = true; };
-  }, []);
+  }, [user?.email]);
 
   // Polling: sync every 5 seconds - server is source of truth
   useEffect(() => {
