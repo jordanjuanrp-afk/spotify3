@@ -80,6 +80,7 @@ export default function MainContent({
   // Multi-selection for bulk delete
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const toggleSelectTrack = (trackId: string) => {
     setSelectedTracks((prev) => {
@@ -103,9 +104,14 @@ export default function MainContent({
   };
 
   const deleteSelectedTracks = () => {
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = () => {
     for (const id of selectedTracks) {
       onRemoveTrack(id);
     }
+    setShowBulkDeleteConfirm(false);
     clearSelection();
   };
 
@@ -732,30 +738,43 @@ export default function MainContent({
               <div className="text-sm text-zinc-500 italic">Adicione músicas abaixo para começar a tocar</div>
             )}
             {playlistTracks.length > 0 && (
-              <div className="flex items-center bg-zinc-900 rounded-full p-1 ml-auto">
+              <>
                 <button
-                  onClick={() => setPlaylistViewMode("list")}
-                  className={`p-2 rounded-full transition cursor-pointer ${
-                    playlistViewMode === "list"
-                      ? "bg-zinc-700 text-white"
-                      : "text-zinc-400 hover:text-white"
+                  onClick={() => {
+                    setSelectionMode(!selectionMode);
+                    if (selectionMode) setSelectedTracks(new Set());
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
+                    selectionMode ? "bg-[#1db954] text-black" : "bg-[#2a2a2a] text-white hover:bg-zinc-800"
                   }`}
-                  title="Visualização em lista"
                 >
-                  <LayoutList className="w-4 h-4" />
+                  {selectionMode ? "Cancelar" : "Selecionar"}
                 </button>
-                <button
-                  onClick={() => setPlaylistViewMode("gallery")}
-                  className={`p-2 rounded-full transition cursor-pointer ${
-                    playlistViewMode === "gallery"
-                      ? "bg-zinc-700 text-white"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                  title="Visualização em galeria"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-              </div>
+                <div className="flex items-center bg-zinc-900 rounded-full p-1 ml-auto">
+                  <button
+                    onClick={() => setPlaylistViewMode("list")}
+                    className={`p-2 rounded-full transition cursor-pointer ${
+                      playlistViewMode === "list"
+                        ? "bg-zinc-700 text-white"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                    title="Visualização em lista"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPlaylistViewMode("gallery")}
+                    className={`p-2 rounded-full transition cursor-pointer ${
+                      playlistViewMode === "gallery"
+                        ? "bg-zinc-700 text-white"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                    title="Visualização em galeria"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
@@ -1285,6 +1304,44 @@ export default function MainContent({
         </div>
       )}
 
+      {/* Confirm Bulk Delete Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#181818] rounded-xl border border-[#2a2a2a] w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Apagar músicas?</h3>
+                <p className="text-xs text-zinc-400">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="bg-[#2a2a2a] rounded-lg p-3 mb-5">
+              <p className="text-sm font-bold text-white">
+                {selectedTracks.size} {selectedTracks.size === 1 ? "música selecionada" : "músicas selecionadas"}
+              </p>
+              <p className="text-xs text-zinc-400 mt-1">Todas serão apagadas permanentemente.</p>
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmBulkDelete}
+                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-full font-bold text-sm cursor-pointer transition flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Apagar {selectedTracks.size}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Bulk Delete Bar */}
       {selectionMode && selectedTracks.size > 0 && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#181818] border border-[#2a2a2a] rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 animate-fade-in">
@@ -1292,7 +1349,13 @@ export default function MainContent({
             {selectedTracks.size} {selectedTracks.size === 1 ? "selecionada" : "selecionadas"}
           </span>
           <button
-            onClick={() => selectAllTracks(allTracks)}
+            onClick={() => {
+              if (activeTab === "playlist" && activePlaylist) {
+                selectAllTracks(playlistTracks);
+              } else {
+                selectAllTracks(allTracks);
+              }
+            }}
             className="text-xs text-zinc-400 hover:text-white transition cursor-pointer"
           >
             Selecionar todas
