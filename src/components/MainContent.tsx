@@ -20,6 +20,9 @@ import {
   Grid3X3,
   LayoutList,
   X,
+  CheckSquare,
+  Square,
+  CheckCircle2,
 } from "lucide-react";
 import { Track, Playlist } from "../types";
 import LiquidHover from "./LiquidHover";
@@ -73,6 +76,38 @@ export default function MainContent({
   const [customSearchQuery, setCustomSearchQuery] = useState("");
   const [playlistViewMode, setPlaylistViewMode] = useState<"list" | "gallery">("list");
   const [lightboxTrack, setLightboxTrack] = useState<Track | null>(null);
+
+  // Multi-selection for bulk delete
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
+
+  const toggleSelectTrack = (trackId: string) => {
+    setSelectedTracks((prev) => {
+      const next = new Set(prev);
+      if (next.has(trackId)) {
+        next.delete(trackId);
+      } else {
+        next.add(trackId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllTracks = (tracks: Track[]) => {
+    setSelectedTracks(new Set(tracks.map((t) => t.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedTracks(new Set());
+    setSelectionMode(false);
+  };
+
+  const deleteSelectedTracks = () => {
+    for (const id of selectedTracks) {
+      onRemoveTrack(id);
+    }
+    clearSelection();
+  };
 
   const activePlaylist = useMemo(() => {
     return playlists.find((p) => p.id === currentPlaylistId) || null;
@@ -269,13 +304,23 @@ export default function MainContent({
                   {quickGridItems.map((track) => {
                   const isCurrent = currentTrack?.id === track.id;
                   const isThisPlaying = isCurrent && isPlaying;
+                  const isSelected = selectedTracks.has(track.id);
                   return (
                     <div
                       key={track.id}
-                      onClick={() => onPlayTrack(track)}
-                      className="bg-zinc-900/60 hover:bg-zinc-800/80 rounded flex items-center overflow-hidden transition-all group relative cursor-pointer"
+                      onClick={() => selectionMode ? toggleSelectTrack(track.id) : onPlayTrack(track)}
+                      className={`bg-zinc-900/60 hover:bg-zinc-800/80 rounded flex items-center overflow-hidden transition-all group relative cursor-pointer ${isSelected ? "ring-2 ring-[#1db954]" : ""}`}
                       id={`quick-card-${track.id}`}
                     >
+                      {selectionMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          {isSelected ? (
+                            <CheckCircle2 className="w-6 h-6 text-[#1db954] fill-[#1db954]" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full border-2 border-zinc-500 bg-black/50" />
+                          )}
+                        </div>
+                      )}
                       <img
                         src={track.cover}
                         alt={track.title}
@@ -467,13 +512,24 @@ export default function MainContent({
                   <div className="flex flex-col">
                     {filteredAllTracks.map((track, i) => {
                       const isCurrent = currentTrack?.id === track.id;
+                      const isSelected = selectedTracks.has(track.id);
                       return (
                         <div
                           key={track.id}
-                          onClick={() => onPlayTrack(track)}
-                          className="flex items-center gap-4 p-3 rounded-md hover:bg-zinc-800/60 cursor-pointer group transition"
+                          onClick={() => selectionMode ? toggleSelectTrack(track.id) : onPlayTrack(track)}
+                          className={`flex items-center gap-4 p-3 rounded-md hover:bg-zinc-800/60 cursor-pointer group transition ${isSelected ? "bg-[#1db954]/10" : ""}`}
                         >
-                          <span className="text-sm text-zinc-500 w-4 text-right font-medium">{i + 1}</span>
+                          {selectionMode ? (
+                            <div className="w-4 flex justify-center">
+                              {isSelected ? (
+                                <CheckCircle2 className="w-4 h-4 text-[#1db954] fill-[#1db954]" />
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-zinc-500" />
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-zinc-500 w-4 text-right font-medium">{i + 1}</span>
+                          )}
                           <img
                             src={track.cover}
                             alt={track.title}
@@ -519,18 +575,42 @@ export default function MainContent({
               {/* Show uploaded tracks library */}
               {allTracks.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-bold mb-4 text-white">Sua Biblioteca</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-white">Sua Biblioteca</h2>
+                    <button
+                      onClick={() => {
+                        setSelectionMode(!selectionMode);
+                        if (selectionMode) setSelectedTracks(new Set());
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
+                        selectionMode ? "bg-[#1db954] text-black" : "bg-[#2a2a2a] text-white hover:bg-zinc-800"
+                      }`}
+                    >
+                      {selectionMode ? "Cancelar" : "Selecionar"}
+                    </button>
+                  </div>
                   <div className="bg-[#181818] rounded-lg p-2">
                     <div className="flex flex-col">
                       {allTracks.map((track, i) => {
                         const isCurrent = currentTrack?.id === track.id;
+                        const isSelected = selectedTracks.has(track.id);
                         return (
                           <div
                             key={track.id}
-                            onClick={() => onPlayTrack(track)}
-                            className="flex items-center gap-4 p-3 rounded-md hover:bg-zinc-800/60 cursor-pointer group transition"
+                            onClick={() => selectionMode ? toggleSelectTrack(track.id) : onPlayTrack(track)}
+                            className={`flex items-center gap-4 p-3 rounded-md hover:bg-zinc-800/60 cursor-pointer group transition ${isSelected ? "bg-[#1db954]/10" : ""}`}
                           >
-                            <span className="text-sm text-zinc-500 w-4 text-right font-medium">{i + 1}</span>
+                            {selectionMode ? (
+                              <div className="w-4 flex justify-center">
+                                {isSelected ? (
+                                  <CheckCircle2 className="w-4 h-4 text-[#1db954] fill-[#1db954]" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border-2 border-zinc-500" />
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-zinc-500 w-4 text-right font-medium">{i + 1}</span>
+                            )}
                             <img
                               src={track.cover}
                               alt={track.title}
@@ -696,29 +776,41 @@ export default function MainContent({
               {playlistTracks.map((track, i) => {
                 const isCurrent = currentTrack?.id === track.id;
                 const isThisPlaying = isCurrent && isPlaying;
+                const isSelected = selectedTracks.has(track.id);
                 const min = Math.floor(track.duration / 60);
                 const sec = Math.floor(track.duration % 60);
 
                 return (
                   <div
                     key={track.id}
-                    onDoubleClick={() => onPlayTrack(track, activePlaylist.id)}
-                    className="grid grid-cols-[40px_1fr_1fr_80px] px-4 py-3 rounded-md hover:bg-zinc-800/40 group items-center cursor-pointer transition"
+                    onClick={() => selectionMode ? toggleSelectTrack(track.id) : undefined}
+                    onDoubleClick={() => !selectionMode && onPlayTrack(track, activePlaylist.id)}
+                    className={`grid grid-cols-[40px_1fr_1fr_80px] px-4 py-3 rounded-md hover:bg-zinc-800/40 group items-center cursor-pointer transition ${isSelected ? "bg-[#1db954]/10" : ""}`}
                     id={`track-row-${track.id}`}
                   >
-                    {/* Index or Play trigger */}
+                    {/* Index or Play trigger or Checkbox */}
                     <div className="text-zinc-400 font-medium text-sm">
-                      <span className="group-hover:hidden">{i + 1}</span>
-                      <button
-                        onClick={() => onPlayTrack(track, activePlaylist.id)}
-                        className="hidden group-hover:block hover:text-white"
-                      >
-                        {isThisPlaying ? (
-                          <Pause className="w-4 h-4 text-[#1db954] fill-current" />
+                      {selectionMode ? (
+                        isSelected ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#1db954] fill-[#1db954]" />
                         ) : (
-                          <Play className="w-4 h-4 text-white fill-current" />
-                        )}
-                      </button>
+                          <div className="w-4 h-4 rounded-full border-2 border-zinc-500 mx-auto" />
+                        )
+                      ) : (
+                        <>
+                          <span className="group-hover:hidden">{i + 1}</span>
+                          <button
+                            onClick={() => onPlayTrack(track, activePlaylist.id)}
+                            className="hidden group-hover:block hover:text-white"
+                          >
+                            {isThisPlaying ? (
+                              <Pause className="w-4 h-4 text-[#1db954] fill-current" />
+                            ) : (
+                              <Play className="w-4 h-4 text-white fill-current" />
+                            )}
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Title & Artist */}
@@ -891,7 +983,20 @@ export default function MainContent({
         <section className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white">Galeria</h2>
-            <span className="text-sm text-zinc-400">{allTracks.length} {allTracks.length === 1 ? "música" : "músicas"}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-zinc-400">{allTracks.length} {allTracks.length === 1 ? "música" : "músicas"}</span>
+              <button
+                onClick={() => {
+                  setSelectionMode(!selectionMode);
+                  if (selectionMode) setSelectedTracks(new Set());
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
+                  selectionMode ? "bg-[#1db954] text-black" : "bg-[#2a2a2a] text-white hover:bg-zinc-800"
+                }`}
+              >
+                {selectionMode ? "Cancelar" : "Selecionar"}
+              </button>
+            </div>
           </div>
 
           {allTracks.length > 0 ? (
@@ -899,19 +1004,31 @@ export default function MainContent({
               {allTracks.map((track) => {
                 const isCurrent = currentTrack?.id === track.id;
                 const isThisPlaying = isCurrent && isPlaying;
+                const isSelected = selectedTracks.has(track.id);
                 return (
                   <div
                     key={track.id}
-                    className="bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer"
+                    onClick={() => selectionMode && toggleSelectTrack(track.id)}
+                    className={`bg-[#181818] hover:bg-zinc-900 rounded-lg overflow-hidden transition duration-300 group flex flex-col cursor-pointer ${isSelected ? "ring-2 ring-[#1db954]" : ""}`}
                     id={`gallery-all-${track.id}`}
                   >
                     <div
                       className="relative aspect-square overflow-hidden cursor-pointer"
                       onClick={(e) => {
+                        if (selectionMode) return;
                         e.stopPropagation();
                         setLightboxTrack(track);
                       }}
                     >
+                      {selectionMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          {isSelected ? (
+                            <CheckCircle2 className="w-6 h-6 text-[#1db954] fill-[#1db954]" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full border-2 border-zinc-500 bg-black/50" />
+                          )}
+                        </div>
+                      )}
                       <img
                         src={track.cover}
                         alt={track.title}
@@ -1165,6 +1282,34 @@ export default function MainContent({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Bulk Delete Bar */}
+      {selectionMode && selectedTracks.size > 0 && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#181818] border border-[#2a2a2a] rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 animate-fade-in">
+          <span className="text-sm text-white font-semibold">
+            {selectedTracks.size} {selectedTracks.size === 1 ? "selecionada" : "selecionadas"}
+          </span>
+          <button
+            onClick={() => selectAllTracks(allTracks)}
+            className="text-xs text-zinc-400 hover:text-white transition cursor-pointer"
+          >
+            Selecionar todas
+          </button>
+          <button
+            onClick={clearSelection}
+            className="text-xs text-zinc-400 hover:text-white transition cursor-pointer"
+          >
+            Limpar
+          </button>
+          <button
+            onClick={deleteSelectedTracks}
+            className="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Apagar
+          </button>
         </div>
       )}
     </main>
