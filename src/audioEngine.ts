@@ -22,6 +22,7 @@ class AudioEngine {
   private mediaElement: HTMLAudioElement | null = null;
   private mediaSource: MediaElementAudioSourceNode | null = null;
   private usingUploadedFile = false;
+  private failedAudioUrls = new Set<string>();
 
   constructor() {
     // Lazy initialized on first user interaction to comply with browser policies
@@ -138,11 +139,19 @@ class AudioEngine {
 
     // Use audioUrl (Supabase Storage) if available, fallback to audioFile (base64)
     const src = track.audioFile || track.audioUrl || "";
-    if (!src || !src.startsWith("http") && !src.startsWith("data:")) {
+    if (!src || (!src.startsWith("http") && !src.startsWith("data:"))) {
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
     }
+
+    // Skip URLs that previously failed (404, 400, etc.)
+    if (this.failedAudioUrls.has(src)) {
+      this.usingUploadedFile = false;
+      this.playSynth(track);
+      return;
+    }
+
     this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
@@ -152,8 +161,19 @@ class AudioEngine {
       this.mediaSource.connect(this.masterGain);
     }
 
+    this.mediaElement.onerror = () => {
+      if (src.startsWith("http")) {
+        this.failedAudioUrls.add(src);
+      }
+      this.usingUploadedFile = false;
+      this.playSynth(track);
+    };
+
     this.mediaElement.play().catch((err) => {
       if (err.name === "AbortError") return;
+      if (src.startsWith("http")) {
+        this.failedAudioUrls.add(src);
+      }
       console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
       this.usingUploadedFile = false;
       this.playSynth(track);
