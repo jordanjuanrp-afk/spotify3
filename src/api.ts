@@ -93,6 +93,7 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
     if (track.lyrics) row.lyrics = track.lyrics;
     if (track.liked) row.liked = true;
     if (track.isPodcast) row.isPodcast = true;
+    if (track.synthGenre) row["synthGenre"] = track.synthGenre;
     if (track.audioUrl) row.audio_url = track.audioUrl;
     if (userEmail) row.user_email = userEmail;
 
@@ -124,6 +125,7 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (data.album !== undefined) update.album = data.album;
     if (data.cover !== undefined) update.cover = data.cover;
     if (data.duration !== undefined) update.duration = data.duration;
+    if (data.synthGenre !== undefined) update["synthGenre"] = data.synthGenre;
     if (data.lyrics !== undefined) update.lyrics = data.lyrics;
     if (data.liked !== undefined) update.liked = data.liked;
     if (data.isPodcast !== undefined) update.isPodcast = data.isPodcast;
