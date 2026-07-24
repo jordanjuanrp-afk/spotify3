@@ -81,12 +81,10 @@ class AudioEngine {
   }
 
   public getAnalyser(): AnalyserNode | null {
-    this.init();
     return this.analyser;
   }
 
   public setVolume(volume: number, isMuted: boolean) {
-    this.init();
     if (!this.masterGain || !this.ctx) return;
     const targetVolume = isMuted ? 0 : volume;
     this.masterGain.gain.setTargetAtTime(targetVolume, this.ctx.currentTime, 0.05);
