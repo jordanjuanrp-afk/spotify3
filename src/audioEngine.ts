@@ -12,8 +12,8 @@ class AudioEngine {
   private bpm = 120;
   private nextNoteTime = 0.0;
   private current16thNote = 0;
-  private lookahead = 25.0; // ms
-  private scheduleAheadTime = 0.1; // seconds
+  private lookahead = 50.0; // ms - increased for Android throttling
+  private scheduleAheadTime = 0.15; // seconds
 
   // Active voice nodes for cleanup
   private activeNodes: AudioNode[] = [];
@@ -23,6 +23,7 @@ class AudioEngine {
   private mediaSource: MediaElementAudioSourceNode | null = null;
   private usingUploadedFile = false;
   private failedAudioUrls: Set<string>;
+  private contextResumed = false;
 
   private static FAILED_URLS_KEY = "spotify3_failed_audio_urls";
 
@@ -66,6 +67,19 @@ class AudioEngine {
     }
   }
 
+  public async unlock() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === "suspended") {
+        await this.ctx.resume();
+      }
+      this.contextResumed = true;
+    } catch (e) {
+      console.warn("Falha ao desbloquear AudioContext:", e);
+    }
+  }
+
   public getAnalyser(): AnalyserNode | null {
     this.init();
     return this.analyser;
@@ -82,12 +96,17 @@ class AudioEngine {
     }
   }
 
-  public play(track: Track) {
+  public async play(track: Track) {
     this.init();
     if (!this.ctx) return;
 
     if (this.ctx.state === "suspended") {
-      this.ctx.resume();
+      try {
+        await this.ctx.resume();
+        this.contextResumed = true;
+      } catch (e) {
+        console.warn("Falha ao retomar AudioContext:", e);
+      }
     }
 
     // Stop any previous playback
@@ -95,6 +114,10 @@ class AudioEngine {
     if (this.mediaElement) {
       this.mediaElement.pause();
       this.mediaElement.currentTime = 0;
+    }
+    if (this.schedulerId !== null) {
+      window.clearInterval(this.schedulerId);
+      this.schedulerId = null;
     }
 
     this.isPlaying = true;
@@ -152,12 +175,6 @@ class AudioEngine {
 
     this.usingUploadedFile = true;
 
-    // Create or reuse HTMLAudioElement
-    if (!this.mediaElement) {
-      this.mediaElement = new Audio();
-      this.mediaElement.crossOrigin = "anonymous";
-    }
-
     // Use audioUrl (Supabase Storage) if available, fallback to audioFile (base64)
     const src = track.audioFile || track.audioUrl || "";
     if (!src || (!src.startsWith("http") && !src.startsWith("data:"))) {
@@ -173,13 +190,32 @@ class AudioEngine {
       return;
     }
 
+    // Create a new HTMLAudioElement each time for Android compatibility
+    // Reusing elements can cause silent playback issues on Android
+    if (this.mediaElement) {
+      this.mediaElement.pause();
+      this.mediaElement.removeAttribute("src");
+      this.mediaElement.load();
+    }
+
+    this.mediaElement = new Audio();
+    this.mediaElement.crossOrigin = "anonymous";
+    this.mediaElement.preload = "auto";
     this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
-    // Connect to Web Audio API for visualization
-    if (!this.mediaSource) {
+    // Create a new MediaElementAudioSourceNode for the new element
+    // (old one is disconnected and discarded)
+    if (this.mediaSource) {
+      try { this.mediaSource.disconnect(); } catch {}
+      this.mediaSource = null;
+    }
+
+    try {
       this.mediaSource = this.ctx.createMediaElementSource(this.mediaElement);
       this.mediaSource.connect(this.masterGain);
+    } catch (e) {
+      console.warn("Falha ao criar MediaElementAudioSourceNode:", e);
     }
 
     this.mediaElement.onerror = () => {
@@ -251,6 +287,31 @@ class AudioEngine {
     // Pause uploaded file if playing
     if (this.mediaElement && this.usingUploadedFile) {
       this.mediaElement.pause();
+    }
+  }
+
+  public stop() {
+    this.isPlaying = false;
+    if (this.schedulerId !== null) {
+      window.clearInterval(this.schedulerId);
+      this.schedulerId = null;
+    }
+    this.stopAllActiveVoices();
+
+    if (this.mediaElement) {
+      this.mediaElement.pause();
+      this.mediaElement.currentTime = 0;
+    }
+
+    if (this.mediaSource) {
+      try { this.mediaSource.disconnect(); } catch {}
+      this.mediaSource = null;
+    }
+
+    if (this.mediaElement) {
+      this.mediaElement.removeAttribute("src");
+      this.mediaElement.load();
+      this.mediaElement = null;
     }
   }
 

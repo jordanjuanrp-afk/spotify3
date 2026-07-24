@@ -118,10 +118,26 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    audioEngine.pause();
+    audioEngine.stop();
     setUser(null);
     localStorage.removeItem("spotify_clone_user");
   };
+
+  // Unlock AudioContext on first user interaction (required for Android browsers)
+  useEffect(() => {
+    const unlock = () => {
+      audioEngine.unlock();
+    };
+    const events = ["touchstart", "click", "keydown"];
+    for (const evt of events) {
+      document.addEventListener(evt, unlock, { once: true, passive: true });
+    }
+    return () => {
+      for (const evt of events) {
+        document.removeEventListener(evt, unlock);
+      }
+    };
+  }, []);
 
   // Load data from server on mount and when user changes
   useEffect(() => {
@@ -396,13 +412,14 @@ export default function App() {
       audioEngine.pause();
       setIsPlaying(false);
     } else {
+      await audioEngine.unlock();
       let audioData = await getAudioFile(currentTrack.id);
       if (!audioData && currentTrack.audioUrl) {
         audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
       }
       const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
-      audioEngine.play(trackToPlay);
+      await audioEngine.play(trackToPlay);
       setIsPlaying(true);
     }
   };
@@ -411,15 +428,16 @@ export default function App() {
     audioEngine.pause();
     setCurrentTrack(track);
     setProgress(0);
-    setIsPlaying(true);
 
+    await audioEngine.unlock();
     let audioData = await getAudioFile(track.id);
     if (!audioData && track.audioUrl) {
       audioData = await downloadAndCacheAudio(track.id, track.audioUrl);
     }
     const audio = audioData || track.audioFile || track.audioUrl;
     const trackToPlay = audio ? { ...track, audioFile: audio } : track;
-    audioEngine.play(trackToPlay);
+    await audioEngine.play(trackToPlay);
+    setIsPlaying(true);
 
     if (fromPlaylistId) {
       setPlaylistContextId(fromPlaylistId);
@@ -463,13 +481,14 @@ export default function App() {
     let nextTrackId = "";
     if (repeat) {
       setProgress(0);
+      await audioEngine.unlock();
       let audioData = await getAudioFile(currentTrack.id);
       if (!audioData && currentTrack.audioUrl) {
         audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
       }
       const audio = audioData || currentTrack.audioFile || currentTrack.audioUrl;
       const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
-      audioEngine.play(trackToPlay);
+      await audioEngine.play(trackToPlay);
       return;
     } else if (shuffle) {
       const randomIndex = Math.floor(Math.random() * activeTrackIds.length);
@@ -482,7 +501,7 @@ export default function App() {
 
     const nextTrack = allTracks.find((t) => t.id === nextTrackId);
     if (nextTrack) {
-      handlePlayTrack(nextTrack, playlistContextId || undefined);
+      await handlePlayTrack(nextTrack, playlistContextId || undefined);
     }
   };
 
@@ -710,7 +729,7 @@ export default function App() {
     setAllTracks((prev) => prev.filter((t) => t.id !== trackId));
     await deleteAudioFile(trackId).catch(() => {});
     if (currentTrack?.id === trackId) {
-      audioEngine.pause();
+      audioEngine.stop();
       setCurrentTrack(null);
       setIsPlaying(false);
       setProgress(0);
