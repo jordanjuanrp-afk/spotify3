@@ -143,27 +143,24 @@ export default function App() {
           : "sem_supabase"
         );
 
-        if (tracks && tracks.length > 0) {
-          setAllTracks((prev) => {
-            const serverIds = new Set(tracks.map((t) => t.id));
-            const localOnly = prev.filter((t) => !serverIds.has(t.id));
-            return [...tracks, ...localOnly];
-          });
+        let cleanTracks = tracks ?? [];
 
+        if (tracks && tracks.length > 0) {
           // One-time cleanup: remove broken audio_url from DB (files no longer in Storage)
           if (!localStorage.getItem("spotify3_audio_urls_cleaned")) {
             const tracksWithAudio = tracks.filter((t) => t.audioUrl);
             if (tracksWithAudio.length > 0) {
-              clearAllAudioUrls().then(() => {
-                localStorage.setItem("spotify3_audio_urls_cleaned", "1");
-                setAllTracks((prev) =>
-                  prev.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t))
-                );
-              });
-            } else {
-              localStorage.setItem("spotify3_audio_urls_cleaned", "1");
+              await clearAllAudioUrls().catch(() => {});
             }
+            localStorage.setItem("spotify3_audio_urls_cleaned", "1");
+            cleanTracks = tracks.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t));
           }
+
+          setAllTracks((prev) => {
+            const serverIds = new Set(cleanTracks.map((t) => t.id));
+            const localOnly = prev.filter((t) => !serverIds.has(t.id));
+            return [...cleanTracks, ...localOnly];
+          });
         }
 
         if (playlistsData && playlistsData.length > 0) setPlaylists(playlistsData);
@@ -194,7 +191,7 @@ export default function App() {
           }
 
           // Background: download and cache audio from audioUrl for all tracks
-          for (const track of (tracks ?? [])) {
+          for (const track of cleanTracks) {
             if (track.audioUrl) {
               getAudioFile(track.id).then((cached) => {
                 if (!cached && !cancelled) {
