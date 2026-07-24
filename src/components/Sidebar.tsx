@@ -111,7 +111,7 @@ export default function Sidebar({
         <div className="p-4 flex items-center justify-between text-gray-400">
           <button
             onClick={() => {
-              setActiveTab("home");
+              setActiveTab("search");
               onSelectPlaylist(null);
             }}
             className="flex items-center gap-3 hover:text-white font-semibold text-sm transition cursor-pointer"
