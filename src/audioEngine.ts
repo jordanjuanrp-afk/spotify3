@@ -170,10 +170,15 @@ class AudioEngine {
 
   private currentBlobUrl: string | null = null;
 
-  private async dataUrlToBlobUrl(dataUrl: string): Promise<string> {
-    const resp = await fetch(dataUrl);
-    const blob = await resp.blob();
-    return URL.createObjectURL(blob);
+  private dataUrlToBlobUrl(dataUrl: string): string {
+    const [header, data] = dataUrl.split(",");
+    const mime = header.match(/:(.*?);/)?.[1] || "audio/mpeg";
+    const binary = atob(data);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+    return URL.createObjectURL(new Blob([array], { type: mime }));
   }
 
   private async playUploadedFile(track: Track) {
@@ -198,8 +203,9 @@ class AudioEngine {
     let src = rawSrc;
     if (rawSrc.startsWith("data:")) {
       try {
-        src = await this.dataUrlToBlobUrl(rawSrc);
-      } catch {
+        src = this.dataUrlToBlobUrl(rawSrc);
+      } catch (e) {
+        console.error("Falha ao converter data URL:", e);
         this.usingUploadedFile = false;
         this.playSynth(track);
         return;
@@ -237,6 +243,11 @@ class AudioEngine {
       }
     }
 
+    // Pause and reset before changing source
+    this.mediaElement.pause();
+    this.mediaElement.removeAttribute("src");
+    this.mediaElement.load();
+
     this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
@@ -248,7 +259,9 @@ class AudioEngine {
       this.playSynth(track);
     };
 
-    this.mediaElement.play().catch((err) => {
+    try {
+      await this.mediaElement.play();
+    } catch (err: any) {
       if (err.name === "AbortError") return;
       if (rawSrc.startsWith("http")) {
         this.markFailed(rawSrc);
@@ -256,7 +269,7 @@ class AudioEngine {
       console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
       this.usingUploadedFile = false;
       this.playSynth(track);
-    });
+    }
   }
 
   private playSynth(track: Track) {
