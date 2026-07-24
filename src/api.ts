@@ -89,27 +89,23 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       album: track.album,
       cover: track.cover,
       duration: track.duration,
-      synthGenre: track.synthGenre,
-      lyrics: track.lyrics ?? null,
-      liked: track.liked ?? false,
     };
+    if (track.synthGenre) row.synthGenre = track.synthGenre;
+    if (track.lyrics) row.lyrics = track.lyrics;
+    if (track.liked) row.liked = true;
     if (track.isPodcast) row.isPodcast = true;
     if (track.audioUrl) row.audio_url = track.audioUrl;
     if (userEmail) row.user_email = userEmail;
 
-    let { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
+    const { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
 
     if (error) {
-      const minimal: Record<string, unknown> = {
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        album: track.album,
-        cover: track.cover,
-        duration: track.duration,
-      };
-      const retry = await supabase.from("tracks").upsert(minimal, { onConflict: "id" });
-      if (retry.error) throw retry.error;
+      console.warn("createTrack upsert failed, trying insert:", error.message);
+      const { error: insertErr } = await supabase.from("tracks").insert(row);
+      if (insertErr) {
+        console.error("createTrack insert also failed:", insertErr.message);
+        throw insertErr;
+      }
     }
 
     return track;
@@ -193,7 +189,14 @@ export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
     if (playlist.isCustom) row.isCustom = true;
 
     const { error } = await supabase.from("playlists").upsert(row, { onConflict: "id" });
-    if (error) throw error;
+    if (error) {
+      console.warn("createPlaylist upsert failed, trying insert:", error.message);
+      const { error: insertErr } = await supabase.from("playlists").insert(row);
+      if (insertErr) {
+        console.error("createPlaylist insert also failed:", insertErr.message);
+        throw insertErr;
+      }
+    }
     return playlist;
   }
   const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);

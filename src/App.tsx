@@ -59,6 +59,7 @@ export default function App() {
     return [];
   });
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [dbStatus, setDbStatus] = useState<string>("connecting");
   const [syncTrigger, setSyncTrigger] = useState(0);
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
@@ -134,7 +135,12 @@ export default function App() {
 
         if (cancelled) return;
 
-        console.log("[SpotifyClone] Tracks recebidas:", tracks?.length ?? 0, "| Playlists:", playlistsData?.length ?? 0);
+        const trackCount = tracks?.length ?? 0;
+        console.log("[SpotifyClone] Tracks recebidas:", trackCount, "| Playlists:", playlistsData?.length ?? 0);
+        setDbStatus(supabase
+          ? (trackCount > 0 ? `ok (${trackCount} faixas)` : "vazio - tabela tracks sem dados")
+          : "sem_supabase"
+        );
 
         if (tracks && tracks.length > 0) {
           setAllTracks((prev) => {
@@ -210,8 +216,13 @@ export default function App() {
           const localTracks = allTracksRef.current;
           const serverIds = new Set(tracks.map((t) => t.id));
           const localOnly = localTracks.filter((t) => !serverIds.has(t.id));
+          if (localOnly.length > 0) {
+            console.log(`[SpotifyClone] Sincronizando ${localOnly.length} tracks locais para Supabase...`);
+          }
           for (const track of localOnly) {
-            createTrack(track, user?.email).catch(() => {});
+            createTrack(track, user?.email).catch((e) =>
+              console.error("[SpotifyClone] Erro ao sincronizar track:", track.id, e?.message)
+            );
           }
         }
         if (playlistsData) {
@@ -765,6 +776,12 @@ export default function App() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-[#121212] rounded-lg overflow-hidden relative">
           
+          {dbStatus !== "ok" && dbStatus !== "connecting" && (
+            <div className={`px-3 py-1.5 text-[10px] font-mono z-40 ${dbStatus.includes("vazio") || dbStatus === "sem_supabase" ? "bg-yellow-500/20 text-yellow-400 border-b border-yellow-500/30" : "bg-green-500/20 text-green-400 border-b border-green-500/30"}`}>
+              DB: {dbStatus} | Tracks locais: {allTracks.length}
+            </div>
+          )}
+
           <div className="absolute top-2 right-4 w-40 h-10 pointer-events-none z-30 opacity-70 flex items-center gap-2">
             <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">SINTETIZADOR</span>
             <canvas ref={canvasRef} width={120} height={32} className="w-30 h-8 rounded" />
