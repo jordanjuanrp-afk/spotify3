@@ -153,6 +153,7 @@ class AudioEngine {
     }
 
     this.mediaElement.play().catch((err) => {
+      if (err.name === "AbortError") return;
       console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
       this.usingUploadedFile = false;
       this.playSynth(track);
