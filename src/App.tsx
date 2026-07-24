@@ -23,6 +23,7 @@ import {
   updatePlaylist,
   uploadAudio,
 } from "./api";
+import { supabase } from "./supabase";
 
 export default function App() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
@@ -125,12 +126,15 @@ export default function App() {
     let cancelled = false;
     const loadData = async () => {
       try {
+        console.log("[SpotifyClone] Carregando dados... Supabase:", !!supabase ? "configurado" : "NÃO configurado");
         const [tracks, playlistsData] = await Promise.all([
           fetchTracks().catch((e) => { console.error("fetchTracks:", e); return null; }),
           fetchPlaylists().catch((e) => { console.error("fetchPlaylists:", e); return null; }),
         ]);
 
         if (cancelled) return;
+
+        console.log("[SpotifyClone] Tracks recebidas:", tracks?.length ?? 0, "| Playlists:", playlistsData?.length ?? 0);
 
         if (tracks && tracks.length > 0) {
           setAllTracks((prev) => {
