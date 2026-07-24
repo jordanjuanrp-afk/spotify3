@@ -1,15 +1,6 @@
-const CACHE_NAME = "spotify3-v6";
-const ASSETS = [
-  "/",
-  "/index.html",
-  "/icon-192.png",
-  "/icon-512.png",
-];
+const CACHE_NAME = "spotify3-v7";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
   self.skipWaiting();
 });
 
@@ -23,6 +14,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   const url = new URL(event.request.url);
 
   if (url.protocol === "capacitor:" || url.protocol === "capacitor-js:") {
@@ -32,23 +25,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(event.request).catch(() => new Response("API unavailable", { status: 503 }))
-    );
+  if (url.hostname !== self.location.hostname) {
     return;
   }
 
-  if (url.protocol === "data:" || url.protocol === "blob:") {
-    return;
-  }
+  if (url.protocol === "data:" || url.protocol === "blob:") return;
+  if (event.request.headers.get("upgrade") === "websocket") return;
 
-  if (event.request.headers.get("upgrade") === "websocket") {
-    return;
-  }
-
-  // HTML: network-first (prevents stale index.html with dead chunk refs)
-  if (event.request.method === "GET" && (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html"))) {
+  // HTML: network-first
+  if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html")) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -62,9 +47,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   // JS/CSS/images: cache-first with network fallback
-  if (event.request.method !== "GET") {
-    return;
-  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
