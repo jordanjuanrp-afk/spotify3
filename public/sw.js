@@ -1,4 +1,4 @@
-const CACHE_NAME = "spotify3-v4";
+const CACHE_NAME = "spotify3-v5";
 const ASSETS = [
   "/",
   "/index.html",
@@ -49,7 +49,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // HTML: network-first (prevents stale index.html with dead chunk refs)
-  if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html")) {
+  if (event.request.method === "GET" && (event.request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html"))) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -63,6 +63,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   // JS/CSS/images: cache-first with network fallback
+  if (event.request.method !== "GET") {
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
