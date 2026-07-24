@@ -146,15 +146,12 @@ export default function App() {
         let cleanTracks = tracks ?? [];
 
         if (tracks && tracks.length > 0) {
-          // One-time cleanup: remove broken audio_url from DB (files no longer in Storage)
-          if (!localStorage.getItem("spotify3_audio_urls_cleaned")) {
-            const tracksWithAudio = tracks.filter((t) => t.audioUrl);
-            if (tracksWithAudio.length > 0) {
-              await clearAllAudioUrls().catch(() => {});
-            }
-            localStorage.setItem("spotify3_audio_urls_cleaned", "1");
-            cleanTracks = tracks.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t));
+          // Remove broken audio_url: files no longer exist in Supabase Storage
+          const tracksWithAudio = tracks.filter((t) => t.audioUrl);
+          if (tracksWithAudio.length > 0) {
+            clearAllAudioUrls().catch(() => {});
           }
+          cleanTracks = tracks.map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t));
 
           setAllTracks((prev) => {
             const serverIds = new Set(cleanTracks.map((t) => t.id));
