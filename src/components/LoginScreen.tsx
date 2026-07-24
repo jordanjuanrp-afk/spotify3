@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Music, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
+import PixelReveal from "./PixelReveal";
 
 interface LoginScreenProps {
   onLogin: (name: string, email: string) => void;
@@ -42,10 +43,22 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-black relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/20 via-black to-[#121212]" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#1db954]/5 rounded-full blur-[120px]" />
+      {/* Pixel Reveal background */}
+      <PixelReveal
+        imageSrc="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&auto=format&fit=crop&q=80"
+        gridSize={18}
+        transitionColor="#000000"
+        edgeHeight={15}
+        duration={2.5}
+        direction="up"
+      />
+
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/60" />
+
+      {/* Gradient accents */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#1db954]/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#1db954]/8 rounded-full blur-[100px]" />
       </div>
 
