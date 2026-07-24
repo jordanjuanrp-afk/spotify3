@@ -168,31 +168,59 @@ class AudioEngine {
     }
   }
 
-  private playUploadedFile(track: Track) {
+  private currentBlobUrl: string | null = null;
+
+  private async dataUrlToBlobUrl(dataUrl: string): Promise<string> {
+    const resp = await fetch(dataUrl);
+    const blob = await resp.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  private async playUploadedFile(track: Track) {
     if (!this.ctx || !this.masterGain) return;
 
     this.usingUploadedFile = true;
 
-    const src = track.audioFile || track.audioUrl || "";
-    if (!src || (!src.startsWith("http") && !src.startsWith("data:"))) {
+    const rawSrc = track.audioFile || track.audioUrl || "";
+    if (!rawSrc || (!rawSrc.startsWith("http") && !rawSrc.startsWith("data:"))) {
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
     }
 
-    if (this.failedAudioUrls.has(src)) {
+    if (this.failedAudioUrls.has(rawSrc)) {
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
+    }
+
+    // Convert data: URLs to Blob URLs — browsers fail with large base64 data URLs
+    let src = rawSrc;
+    if (rawSrc.startsWith("data:")) {
+      try {
+        src = await this.dataUrlToBlobUrl(rawSrc);
+      } catch {
+        this.usingUploadedFile = false;
+        this.playSynth(track);
+        return;
+      }
+    }
+
+    // Clean up previous blob URL
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl);
+      this.currentBlobUrl = null;
+    }
+    if (src.startsWith("blob:")) {
+      this.currentBlobUrl = src;
     }
 
     // Create Audio element once, reuse for all tracks
     if (!this.mediaElement) {
       this.mediaElement = new Audio();
-      this.mediaElement.preload = "auto";
     }
 
-    // Only set crossOrigin for HTTP URLs (breaks data: URLs)
+    // Only set crossOrigin for HTTP URLs
     if (src.startsWith("http")) {
       this.mediaElement.crossOrigin = "anonymous";
     } else {
@@ -213,28 +241,22 @@ class AudioEngine {
     this.mediaElement.volume = this.masterGain.gain.value;
 
     this.mediaElement.onerror = () => {
-      if (src.startsWith("http")) {
-        this.markFailed(src);
+      if (rawSrc.startsWith("http")) {
+        this.markFailed(rawSrc);
       }
       this.usingUploadedFile = false;
       this.playSynth(track);
     };
 
-    const tryPlay = () => {
-      this.mediaElement?.play().catch((err) => {
-        if (err.name === "AbortError") return;
-        if (src.startsWith("http")) {
-          this.markFailed(src);
-        }
-        console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
-        this.usingUploadedFile = false;
-        this.playSynth(track);
-      });
-    };
-
-    // Wait for canplay event before playing (fixes "no supported source" on Android)
-    this.mediaElement.addEventListener("canplay", tryPlay, { once: true });
-    this.mediaElement.load();
+    this.mediaElement.play().catch((err) => {
+      if (err.name === "AbortError") return;
+      if (rawSrc.startsWith("http")) {
+        this.markFailed(rawSrc);
+      }
+      console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
+      this.usingUploadedFile = false;
+      this.playSynth(track);
+    });
   }
 
   private playSynth(track: Track) {
@@ -301,6 +323,11 @@ class AudioEngine {
     if (this.mediaElement) {
       this.mediaElement.pause();
       this.mediaElement.currentTime = 0;
+    }
+
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl);
+      this.currentBlobUrl = null;
     }
   }
 
