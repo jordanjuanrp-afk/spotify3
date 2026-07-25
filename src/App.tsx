@@ -22,7 +22,6 @@ import {
   createPlaylist,
   updatePlaylist,
   uploadAudio,
-  clearAllAudioUrls,
 } from "./api";
 import { supabase } from "./supabase";
 
@@ -192,14 +191,7 @@ export default function App() {
         let cleanTracks = tracks ?? [];
 
         if (tracks && tracks.length > 0) {
-          // Remove broken audio_url: files no longer exist in Supabase Storage
-          const tracksWithAudio = tracks.filter((t) => t.audioUrl);
-          if (tracksWithAudio.length > 0) {
-            clearAllAudioUrls().catch(() => {});
-          }
-          cleanTracks = tracks
-            .map((t) => (t.audioUrl ? { ...t, audioUrl: undefined } : t))
-            .filter((t) => !deletedTrackIdsRef.current.has(t.id));
+          cleanTracks = tracks.filter((t) => !deletedTrackIdsRef.current.has(t.id));
 
           setAllTracks((prev) => {
             const serverIds = new Set(cleanTracks.map((t) => t.id));

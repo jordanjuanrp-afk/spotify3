@@ -196,9 +196,37 @@ class AudioEngine {
     }
 
     if (this.failedAudioUrls.has(rawSrc)) {
+      console.warn("[AudioEngine] URL já falhou anteriormente, ignorando:", rawSrc.substring(0, 80));
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
+    }
+
+    // For HTTP URLs, validate with a HEAD request before trying to play
+    if (rawSrc.startsWith("http")) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(rawSrc, { method: "HEAD", signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!resp.ok) {
+          console.warn("[AudioEngine] Audio URL retornou status", resp.status, rawSrc.substring(0, 80));
+          this.markFailed(rawSrc);
+          this.usingUploadedFile = false;
+          this.playSynth(track);
+          return;
+        }
+        const contentType = resp.headers.get("content-type") || "";
+        if (contentType && !contentType.includes("audio") && !contentType.includes("octet-stream") && !contentType.includes("video")) {
+          console.warn("[AudioEngine] Content-Type não é áudio:", contentType, rawSrc.substring(0, 80));
+          this.markFailed(rawSrc);
+          this.usingUploadedFile = false;
+          this.playSynth(track);
+          return;
+        }
+      } catch (e) {
+        console.warn("[AudioEngine] HEAD request falhou, tentando mesmo assim:", rawSrc.substring(0, 80));
+      }
     }
 
     // Convert data: URLs to Blob URLs — browsers fail with large base64 data URLs
@@ -207,7 +235,7 @@ class AudioEngine {
       try {
         src = this.dataUrlToBlobUrl(rawSrc);
       } catch (e) {
-        console.error("Falha ao converter data URL:", e);
+        console.error("[AudioEngine] Falha ao converter data URL:", e);
         this.usingUploadedFile = false;
         this.playSynth(track);
         return;
@@ -241,13 +269,13 @@ class AudioEngine {
         this.mediaSource = this.ctx.createMediaElementSource(this.mediaElement);
         this.mediaSource.connect(this.masterGain);
       } catch (e) {
-        console.warn("Falha ao criar MediaElementAudioSourceNode:", e);
+        console.warn("[AudioEngine] Falha ao criar MediaElementAudioSourceNode:", e);
       }
     }
 
     // Set error handler before changing source
     this.mediaElement.onerror = (e) => {
-      console.error("MediaElement error:", e);
+      console.error("[AudioEngine] MediaElement error:", e);
       if (rawSrc.startsWith("http")) {
         this.markFailed(rawSrc);
       }
@@ -261,6 +289,8 @@ class AudioEngine {
     this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
+    console.log("[AudioEngine] Reproduzindo áudio:", src.substring(0, 100));
+
     try {
       await this.mediaElement.play();
     } catch (err: any) {
@@ -268,7 +298,7 @@ class AudioEngine {
       if (rawSrc.startsWith("http")) {
         this.markFailed(rawSrc);
       }
-      console.warn("Áudio não pôde tocar, usando sintetizador:", err.message);
+      console.warn("[AudioEngine] Áudio não pôde tocar, usando sintetizador:", err.message);
       this.usingUploadedFile = false;
       this.playSynth(track);
     }
