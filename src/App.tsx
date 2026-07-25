@@ -482,8 +482,9 @@ export default function App() {
       const trackToPlay = { ...track, audioFile: audioData };
       await audioEngine.play(trackToPlay);
     } else {
-      // Sem áudio em cache e URL do Storage inacessível — toca sintetizador
-      await audioEngine.play(track);
+      // Sem áudio em cache — limpa audioUrl quebrada e toca sintetizador
+      const trackClean = { ...track, audioUrl: undefined, audioFile: undefined };
+      await audioEngine.play(trackClean);
     }
     setIsPlaying(true);
 
@@ -537,7 +538,7 @@ export default function App() {
       if (audioData) {
         await audioEngine.play({ ...currentTrack, audioFile: audioData });
       } else {
-        await audioEngine.play(currentTrack);
+        await audioEngine.play({ ...currentTrack, audioUrl: undefined, audioFile: undefined });
       }
       return;
     } else if (shuffle) {

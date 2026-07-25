@@ -1,80 +1,65 @@
+-- ============================================
+-- SCHEMA COMPLETO DO SUPABASE
 -- Execute este SQL no Supabase Dashboard > SQL Editor
+-- ============================================
 
--- 1. Criar tabela tracks (se não existir)
-create table if not exists tracks (
-  id text primary key,
-  title text not null,
-  artist text not null,
-  album text not null default '',
-  cover text not null default '',
-  duration integer not null default 0,
-  lyrics jsonb,
-  liked boolean default false,
-  audio_url text,
-  user_email text
+-- 1. Criar tabela tracks
+CREATE TABLE IF NOT EXISTS tracks (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  album TEXT NOT NULL DEFAULT '',
+  cover TEXT NOT NULL DEFAULT '',
+  duration INTEGER NOT NULL DEFAULT 0,
+  synthGenre TEXT NOT NULL DEFAULT 'electronic',
+  lyrics JSONB,
+  liked BOOLEAN DEFAULT FALSE,
+  audio_url TEXT,
+  user_email TEXT
 );
 
--- 2. Adicionar colunas que podem não existir (ignora erro se já existir)
-do $$ begin
-  alter table tracks add column synthGenre text not null default 'electronic';
-exception when duplicate_column then null;
-end $$;
-
-do $$ begin
-  alter table tracks add column isPodcast boolean default false;
-exception when duplicate_column then null;
-end $$;
-
--- 3. Criar tabela playlists (se não existir)
-create table if not exists playlists (
-  id text primary key,
-  name text not null,
-  description text,
-  cover text not null default '',
-  tracks jsonb not null default '[]',
-  isCustom boolean default false,
-  user_email text
+-- 2. Criar tabela playlists
+CREATE TABLE IF NOT EXISTS playlists (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  cover TEXT NOT NULL DEFAULT '',
+  tracks JSONB NOT NULL DEFAULT '[]',
+  isCustom BOOLEAN DEFAULT FALSE,
+  user_email TEXT
 );
 
--- 4. Habilitar RLS (Row Level Security)
-alter table tracks enable row level security;
-alter table playlists enable row level security;
+-- 3. Habilitar RLS
+ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE playlists ENABLE ROW LEVEL SECURITY;
 
--- 5. Políticas de acesso público (qualquer um pode ler, escrever, atualizar, deletar)
-do $$ begin
-  create policy "Public read" on tracks for select using (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public insert" on tracks for insert with check (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public update" on tracks for update using (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public delete" on tracks for delete using (true);
-exception when duplicate_object then null;
-end $$;
+-- 4. Políticas de acesso público para tracks
+DROP POLICY IF EXISTS "Public read tracks" ON tracks;
+CREATE POLICY "Public read tracks" ON tracks FOR SELECT USING (TRUE);
 
-do $$ begin
-  create policy "Public read" on playlists for select using (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public insert" on playlists for insert with check (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public update" on playlists for update using (true);
-exception when duplicate_object then null;
-end $$;
-do $$ begin
-  create policy "Public delete" on playlists for delete using (true);
-exception when duplicate_object then null;
-end $$;
+DROP POLICY IF EXISTS "Public insert tracks" ON tracks FOR INSERT WITH CHECK (TRUE);
 
--- 6. Criar bucket de áudio no Storage (se não existir)
--- Execute manualmente no Supabase Dashboard > Storage > New Bucket:
--- Nome: audio | Public: true
+DROP POLICY IF EXISTS "Public update tracks" ON tracks FOR UPDATE USING (TRUE);
+
+DROP POLICY IF EXISTS "Public delete tracks" ON tracks FOR DELETE USING (TRUE);
+
+-- 5. Políticas de acesso público para playlists
+DROP POLICY IF EXISTS "Public read playlists" ON playlists FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "Public insert playlists" ON playlists FOR INSERT WITH CHECK (TRUE);
+
+DROP POLICY IF EXISTS "Public update playlists" ON playlists FOR UPDATE USING (TRUE);
+
+DROP POLICY IF EXISTS "Public delete playlists" ON playlists FOR DELETE USING (TRUE);
+
+-- 6. Criar bucket de áudio no Storage
+INSERT INTO storage.buckets (id, name, public) VALUES ('audio', 'audio', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. Políticas de Storage para o bucket 'audio'
+DROP POLICY IF EXISTS "Public read audio" ON storage.objects;
+CREATE POLICY "Public read audio" ON storage.objects FOR SELECT USING (bucket_id = 'audio');
+
+DROP POLICY IF EXISTS "Anyone can upload audio" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'audio');
+
+DROP POLICY IF EXISTS "Anyone can delete audio" ON storage.objects FOR DELETE USING (bucket_id = 'audio');
