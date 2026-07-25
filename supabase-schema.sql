@@ -1,6 +1,7 @@
 -- ============================================
 -- SCHEMA COMPLETO DO SUPABASE
 -- Execute este SQL no Supabase Dashboard > SQL Editor
+-- Execute CADA bloco separadamente se der erro
 -- ============================================
 
 -- 1. Criar tabela tracks
@@ -34,32 +35,22 @@ ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE playlists ENABLE ROW LEVEL SECURITY;
 
 -- 4. Políticas de acesso público para tracks
-DROP POLICY IF EXISTS "Public read tracks" ON tracks;
 CREATE POLICY "Public read tracks" ON tracks FOR SELECT USING (TRUE);
-
-DROP POLICY IF EXISTS "Public insert tracks" ON tracks FOR INSERT WITH CHECK (TRUE);
-
-DROP POLICY IF EXISTS "Public update tracks" ON tracks FOR UPDATE USING (TRUE);
-
-DROP POLICY IF EXISTS "Public delete tracks" ON tracks FOR DELETE USING (TRUE);
+CREATE POLICY "Public insert tracks" ON tracks FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Public update tracks" ON tracks FOR UPDATE USING (TRUE);
+CREATE POLICY "Public delete tracks" ON tracks FOR DELETE USING (TRUE);
 
 -- 5. Políticas de acesso público para playlists
-DROP POLICY IF EXISTS "Public read playlists" ON playlists FOR SELECT USING (TRUE);
-
-DROP POLICY IF EXISTS "Public insert playlists" ON playlists FOR INSERT WITH CHECK (TRUE);
-
-DROP POLICY IF EXISTS "Public update playlists" ON playlists FOR UPDATE USING (TRUE);
-
-DROP POLICY IF EXISTS "Public delete playlists" ON playlists FOR DELETE USING (TRUE);
+CREATE POLICY "Public read playlists" ON playlists FOR SELECT USING (TRUE);
+CREATE POLICY "Public insert playlists" ON playlists FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Public update playlists" ON playlists FOR UPDATE USING (TRUE);
+CREATE POLICY "Public delete playlists" ON playlists FOR DELETE USING (TRUE);
 
 -- 6. Criar bucket de áudio no Storage
 INSERT INTO storage.buckets (id, name, public) VALUES ('audio', 'audio', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. Políticas de Storage para o bucket 'audio'
-DROP POLICY IF EXISTS "Public read audio" ON storage.objects;
 CREATE POLICY "Public read audio" ON storage.objects FOR SELECT USING (bucket_id = 'audio');
-
-DROP POLICY IF EXISTS "Anyone can upload audio" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'audio');
-
-DROP POLICY IF EXISTS "Anyone can delete audio" ON storage.objects FOR DELETE USING (bucket_id = 'audio');
+CREATE POLICY "Anyone can upload audio" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'audio');
+CREATE POLICY "Anyone can delete audio" ON storage.objects FOR DELETE USING (bucket_id = 'audio');
