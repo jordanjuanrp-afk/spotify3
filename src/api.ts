@@ -102,9 +102,7 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       album: track.album || "",
       cover: track.cover || "",
       duration: track.duration || 0,
-      synthGenre: track.synthGenre || "electronic",
       liked: track.liked || false,
-      isPodcast: track.isPodcast || false,
       audio_url: track.audioUrl || null,
       user_email: userEmail || null,
     };
@@ -142,10 +140,8 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (data.album !== undefined) update.album = data.album;
     if (data.cover !== undefined) update.cover = data.cover;
     if (data.duration !== undefined) update.duration = data.duration;
-    if (data.synthGenre !== undefined) update.synthGenre = data.synthGenre;
     if (data.lyrics !== undefined) update.lyrics = data.lyrics;
     if (data.liked !== undefined) update.liked = data.liked;
-    if (data.isPodcast !== undefined) update.isPodcast = data.isPodcast;
     if (data.audioUrl !== undefined) update.audio_url = data.audioUrl;
     
     console.log("[SpotifyClone] Atualizando faixa no Supabase:", id, update);
