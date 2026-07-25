@@ -173,7 +173,9 @@ class AudioEngine {
   private dataUrlToBlobUrl(dataUrl: string): string {
     const [header, data] = dataUrl.split(",");
     const mime = header.match(/:(.*?);/)?.[1] || "audio/mpeg";
-    const binary = atob(data);
+    // Fix URL-safe base64 characters
+    const base64 = data.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64);
     const array = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       array[i] = binary.charCodeAt(i);
@@ -243,21 +245,20 @@ class AudioEngine {
       }
     }
 
-    // Pause and reset before changing source
-    this.mediaElement.pause();
-    this.mediaElement.removeAttribute("src");
-    this.mediaElement.load();
-
-    this.mediaElement.src = src;
-    this.mediaElement.volume = this.masterGain.gain.value;
-
-    this.mediaElement.onerror = () => {
+    // Set error handler before changing source
+    this.mediaElement.onerror = (e) => {
+      console.error("MediaElement error:", e);
       if (rawSrc.startsWith("http")) {
         this.markFailed(rawSrc);
       }
       this.usingUploadedFile = false;
       this.playSynth(track);
     };
+
+    // Pause and set new source
+    this.mediaElement.pause();
+    this.mediaElement.src = src;
+    this.mediaElement.volume = this.masterGain.gain.value;
 
     try {
       await this.mediaElement.play();
