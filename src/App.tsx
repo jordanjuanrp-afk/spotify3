@@ -701,7 +701,10 @@ export default function App() {
     const newId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const newTrack: Track = { ...trackData, id: newId };
 
+    console.log("[SpotifyClone] Adicionando nova faixa:", newTrack.title, "| Supabase:", !!supabase);
+
     if (audioFile) {
+      console.log("[SpotifyClone] Arquivo de áudio detectado, fazendo upload...");
       // Save to local IndexedDB as fallback
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -711,13 +714,17 @@ export default function App() {
       });
       try {
         await saveAudioFile(newId, base64);
+        console.log("[SpotifyClone] Áudio salvo localmente (IndexedDB)");
       } catch (err) {
         console.error("Erro ao salvar áudio local:", err);
       }
       // Upload to Supabase Storage for all users
       try {
         const audioUrl = await uploadAudio(newId, audioFile);
-        if (audioUrl) newTrack.audioUrl = audioUrl;
+        if (audioUrl) {
+          newTrack.audioUrl = audioUrl;
+          console.log("[SpotifyClone] Áudio enviado para Supabase Storage:", audioUrl);
+        }
       } catch (err) {
         console.error("Erro ao enviar áudio para Supabase Storage:", err);
       }
@@ -725,11 +732,12 @@ export default function App() {
 
     try {
       await createTrack(newTrack, user?.email);
+      console.log("[SpotifyClone] Faixa criada com sucesso no banco de dados");
       setAllTracks((prev) => [...prev, newTrack]);
       setActiveTab("search");
       setSyncTrigger((t) => t + 1);
     } catch (err) {
-      console.error("Erro ao enviar faixa para o servidor:", err);
+      console.error("[SpotifyClone] Erro ao enviar faixa para o servidor:", err);
       setAllTracks((prev) => [...prev, newTrack]);
       setActiveTab("search");
     }

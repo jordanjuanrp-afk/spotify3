@@ -61,7 +61,7 @@ export async function fetchTracks(): Promise<Track[]> {
     try {
       const { data, error } = await supabase.from("tracks").select("*");
       if (error) {
-        console.error("Erro ao buscar faixas do Supabase:", error.message, error);
+        console.error("[SpotifyClone] Erro ao buscar faixas do Supabase:", error.message, error);
         return localGet<Track[]>("spotify_clone_tracks", []);
       }
       const tracks = (data ?? []).map((r) => ({
@@ -77,6 +77,7 @@ export async function fetchTracks(): Promise<Track[]> {
         isPodcast: r.isPodcast ?? false,
         audioUrl: r.audio_url ?? undefined,
       }));
+      console.log("[SpotifyClone] Faixas carregadas do Supabase:", tracks.length);
       if (tracks.length > 0) {
         localSet("spotify_clone_tracks", tracks.map((t) => {
           const { audioFile: _af, ...rest } = t as Track & { audioFile?: unknown };
@@ -85,7 +86,7 @@ export async function fetchTracks(): Promise<Track[]> {
       }
       return tracks;
     } catch (e) {
-      console.error("Excecao ao buscar faixas:", e);
+      console.error("[SpotifyClone] Excecao ao buscar faixas:", e);
       return localGet<Track[]>("spotify_clone_tracks", []);
     }
   }
@@ -98,30 +99,34 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       id: track.id,
       title: track.title,
       artist: track.artist,
-      album: track.album,
-      cover: track.cover,
-      duration: track.duration,
+      album: track.album || "",
+      cover: track.cover || "",
+      duration: track.duration || 0,
+      synthGenre: track.synthGenre || "electronic",
+      liked: track.liked || false,
+      isPodcast: track.isPodcast || false,
+      audio_url: track.audioUrl || null,
+      user_email: userEmail || null,
     };
     if (track.lyrics) row.lyrics = track.lyrics;
-    if (track.liked) row.liked = true;
-    if (track.isPodcast) row.isPodcast = true;
-    if (track.synthGenre) row["synthGenre"] = track.synthGenre;
-    if (track.audioUrl) row.audio_url = track.audioUrl;
-    if (userEmail) row.user_email = userEmail;
+
+    console.log("[SpotifyClone] Salvando faixa no Supabase:", row);
 
     const { error } = await supabase.from("tracks").upsert(row, { onConflict: "id" });
 
     if (error) {
-      console.warn("Falha ao atualizar faixa, tentando inserir:", error.message);
+      console.warn("[SpotifyClone] Falha ao atualizar faixa, tentando inserir:", error.message);
       const { error: insertErr } = await supabase.from("tracks").insert(row);
       if (insertErr) {
-        console.error("Insercao de faixa tambem falhou:", insertErr.message);
+        console.error("[SpotifyClone] Insercao de faixa tambem falhou:", insertErr.message);
         throw insertErr;
       }
     }
 
+    console.log("[SpotifyClone] Faixa salva com sucesso no Supabase:", track.id);
     return track;
   }
+  console.warn("[SpotifyClone] Supabase nao configurado, salvando localmente");
   const tracks = localGet<Track[]>("spotify_clone_tracks", []);
   const idx = tracks.findIndex((t) => t.id === track.id);
   if (idx >= 0) tracks[idx] = track; else tracks.push(track);
@@ -137,13 +142,19 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
     if (data.album !== undefined) update.album = data.album;
     if (data.cover !== undefined) update.cover = data.cover;
     if (data.duration !== undefined) update.duration = data.duration;
-    if (data.synthGenre !== undefined) update["synthGenre"] = data.synthGenre;
+    if (data.synthGenre !== undefined) update.synthGenre = data.synthGenre;
     if (data.lyrics !== undefined) update.lyrics = data.lyrics;
     if (data.liked !== undefined) update.liked = data.liked;
     if (data.isPodcast !== undefined) update.isPodcast = data.isPodcast;
-    if (data.audioUrl) update.audio_url = data.audioUrl;
+    if (data.audioUrl !== undefined) update.audio_url = data.audioUrl;
+    
+    console.log("[SpotifyClone] Atualizando faixa no Supabase:", id, update);
+    
     const { error } = await supabase.from("tracks").update(update).eq("id", id);
-    if (error) throw error;
+    if (error) {
+      console.error("[SpotifyClone] Erro ao atualizar faixa:", error.message);
+      throw error;
+    }
     return { ...data, id } as Track;
   }
   const tracks = localGet<Track[]>("spotify_clone_tracks", []);
@@ -155,9 +166,14 @@ export async function updateTrack(id: string, data: Partial<Track>): Promise<Tra
 
 export async function deleteTrack(id: string): Promise<void> {
   if (supabase) {
+    console.log("[SpotifyClone] Deletando faixa do Supabase:", id);
     const { error } = await supabase.from("tracks").delete().eq("id", id);
-    if (error) throw error;
+    if (error) {
+      console.error("[SpotifyClone] Erro ao deletar faixa:", error.message);
+      throw error;
+    }
     await deleteAudioFromStorage(id).catch(() => {});
+    console.log("[SpotifyClone] Faixa deletada com sucesso:", id);
     return;
   }
   const tracks = localGet<Track[]>("spotify_clone_tracks", []);
@@ -197,20 +213,24 @@ export async function createPlaylist(playlist: Playlist): Promise<Playlist> {
       description: playlist.description ?? null,
       cover: playlist.cover,
       tracks: playlist.tracks,
+      isCustom: playlist.isCustom || false,
     };
-    if (playlist.isCustom) row.isCustom = true;
+
+    console.log("[SpotifyClone] Salvando playlist no Supabase:", row);
 
     const { error } = await supabase.from("playlists").upsert(row, { onConflict: "id" });
     if (error) {
-      console.warn("Falha ao atualizar playlist, tentando inserir:", error.message);
+      console.warn("[SpotifyClone] Falha ao atualizar playlist, tentando inserir:", error.message);
       const { error: insertErr } = await supabase.from("playlists").insert(row);
       if (insertErr) {
-        console.error("Insercao de playlist tambem falhou:", insertErr.message);
+        console.error("[SpotifyClone] Insercao de playlist tambem falhou:", insertErr.message);
         throw insertErr;
       }
     }
+    console.log("[SpotifyClone] Playlist salva com sucesso:", playlist.id);
     return playlist;
   }
+  console.warn("[SpotifyClone] Supabase nao configurado, salvando playlist localmente");
   const playlists = localGet<Playlist[]>("spotify_clone_playlists", []);
   const idx = playlists.findIndex((p) => p.id === playlist.id);
   if (idx >= 0) playlists[idx] = playlist; else playlists.push(playlist);
