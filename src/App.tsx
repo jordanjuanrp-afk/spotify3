@@ -482,13 +482,8 @@ export default function App() {
       const trackToPlay = { ...track, audioFile: audioData };
       await audioEngine.play(trackToPlay);
     } else {
-      // No audio data found - try direct URL or play synth
-      if (track.audioUrl) {
-        const trackToPlay = { ...track, audioFile: track.audioUrl };
-        await audioEngine.play(trackToPlay);
-      } else {
-        await audioEngine.play(track);
-      }
+      // Sem áudio em cache e URL do Storage inacessível — toca sintetizador
+      await audioEngine.play(track);
     }
     setIsPlaying(true);
 
@@ -541,8 +536,6 @@ export default function App() {
       }
       if (audioData) {
         await audioEngine.play({ ...currentTrack, audioFile: audioData });
-      } else if (currentTrack.audioUrl) {
-        await audioEngine.play({ ...currentTrack, audioFile: currentTrack.audioUrl });
       } else {
         await audioEngine.play(currentTrack);
       }
