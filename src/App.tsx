@@ -454,18 +454,28 @@ export default function App() {
       setIsPlaying(false);
     } else {
       await audioEngine.unlock();
-      let audioData = await getAudioFile(currentTrack.id);
-      if (!audioData && currentTrack.audioUrl) {
-        audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
-      }
-      const audio = audioData || currentTrack.audioFile;
-      const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
-      await audioEngine.play(trackToPlay);
+      await audioEngine.resume();
       setIsPlaying(true);
     }
   };
 
   const handlePlayTrack = async (track: Track, fromPlaylistId?: string) => {
+    // If clicking the same track that's already playing, toggle pause/play
+    if (currentTrack?.id === track.id && isPlaying) {
+      audioEngine.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    // If clicking the same track that's paused, resume playback
+    if (currentTrack?.id === track.id && !isPlaying) {
+      await audioEngine.unlock();
+      await audioEngine.resume();
+      setIsPlaying(true);
+      return;
+    }
+
+    // Otherwise, start playing the new track
     audioEngine.pause();
     setCurrentTrack(track);
     setProgress(0);

@@ -255,8 +255,9 @@ class AudioEngine {
       this.playSynth(track);
     };
 
-    // Pause and set new source
+    // Pause, reset position, and set new source
     this.mediaElement.pause();
+    this.mediaElement.currentTime = 0;
     this.mediaElement.src = src;
     this.mediaElement.volume = this.masterGain.gain.value;
 
@@ -323,6 +324,40 @@ class AudioEngine {
     // Pause uploaded file if playing
     if (this.mediaElement && this.usingUploadedFile) {
       this.mediaElement.pause();
+    }
+  }
+
+  public async resume() {
+    if (!this.ctx) return;
+
+    if (this.ctx.state === "suspended") {
+      try {
+        await this.ctx.resume();
+        this.contextResumed = true;
+      } catch (e) {
+        console.warn("Falha ao retomar AudioContext:", e);
+      }
+    }
+
+    this.isPlaying = true;
+
+    if (this.usingUploadedFile && this.mediaElement) {
+      try {
+        await this.mediaElement.play();
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.warn("Falha ao retomar mídia:", err.message);
+        }
+      }
+      return;
+    }
+
+    // Resume synth scheduler
+    if (this.currentTrack && !this.usingUploadedFile) {
+      this.nextNoteTime = this.ctx.currentTime;
+      if (this.schedulerId === null) {
+        this.schedulerId = window.setInterval(() => this.scheduler(), this.lookahead);
+      }
     }
   }
 
