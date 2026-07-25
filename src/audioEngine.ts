@@ -189,44 +189,18 @@ class AudioEngine {
     this.usingUploadedFile = true;
 
     const rawSrc = track.audioFile || track.audioUrl || "";
-    if (!rawSrc || (!rawSrc.startsWith("http") && !rawSrc.startsWith("data:"))) {
+    if (!rawSrc || (!rawSrc.startsWith("http") && !rawSrc.startsWith("data:") && !rawSrc.startsWith("blob:"))) {
+      console.warn("[AudioEngine] Fonte de áudio inválida, usando sintetizador");
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
     }
 
     if (this.failedAudioUrls.has(rawSrc)) {
-      console.warn("[AudioEngine] URL já falhou anteriormente, ignorando:", rawSrc.substring(0, 80));
+      console.warn("[AudioEngine] URL já falhou anteriormente, usando sintetizador:", rawSrc.substring(0, 80));
       this.usingUploadedFile = false;
       this.playSynth(track);
       return;
-    }
-
-    // For HTTP URLs, validate with a HEAD request before trying to play
-    if (rawSrc.startsWith("http")) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const resp = await fetch(rawSrc, { method: "HEAD", signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!resp.ok) {
-          console.warn("[AudioEngine] Audio URL retornou status", resp.status, rawSrc.substring(0, 80));
-          this.markFailed(rawSrc);
-          this.usingUploadedFile = false;
-          this.playSynth(track);
-          return;
-        }
-        const contentType = resp.headers.get("content-type") || "";
-        if (contentType && !contentType.includes("audio") && !contentType.includes("octet-stream") && !contentType.includes("video")) {
-          console.warn("[AudioEngine] Content-Type não é áudio:", contentType, rawSrc.substring(0, 80));
-          this.markFailed(rawSrc);
-          this.usingUploadedFile = false;
-          this.playSynth(track);
-          return;
-        }
-      } catch (e) {
-        console.warn("[AudioEngine] HEAD request falhou, tentando mesmo assim:", rawSrc.substring(0, 80));
-      }
     }
 
     // Convert data: URLs to Blob URLs — browsers fail with large base64 data URLs
@@ -273,15 +247,17 @@ class AudioEngine {
       }
     }
 
-    // Set error handler before changing source
-    this.mediaElement.onerror = (e) => {
-      console.error("[AudioEngine] MediaElement error:", e);
+    const handleError = () => {
+      console.warn("[AudioEngine] Áudio não pôde tocar, usando sintetizador");
       if (rawSrc.startsWith("http")) {
         this.markFailed(rawSrc);
       }
       this.usingUploadedFile = false;
       this.playSynth(track);
     };
+
+    // Set error handler before changing source
+    this.mediaElement.onerror = handleError;
 
     // Pause, reset position, and set new source
     this.mediaElement.pause();
@@ -293,14 +269,10 @@ class AudioEngine {
 
     try {
       await this.mediaElement.play();
+      console.log("[AudioEngine] Áudio reproduzindo com sucesso");
     } catch (err: any) {
       if (err.name === "AbortError") return;
-      if (rawSrc.startsWith("http")) {
-        this.markFailed(rawSrc);
-      }
-      console.warn("[AudioEngine] Áudio não pôde tocar, usando sintetizador:", err.message);
-      this.usingUploadedFile = false;
-      this.playSynth(track);
+      handleError();
     }
   }
 

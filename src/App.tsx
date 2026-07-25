@@ -477,9 +477,19 @@ export default function App() {
     if (!audioData && track.audioUrl) {
       audioData = await downloadAndCacheAudio(track.id, track.audioUrl);
     }
-    const audio = audioData || track.audioFile;
-    const trackToPlay = audio ? { ...track, audioFile: audio } : track;
-    await audioEngine.play(trackToPlay);
+
+    if (audioData) {
+      const trackToPlay = { ...track, audioFile: audioData };
+      await audioEngine.play(trackToPlay);
+    } else {
+      // No audio data found - try direct URL or play synth
+      if (track.audioUrl) {
+        const trackToPlay = { ...track, audioFile: track.audioUrl };
+        await audioEngine.play(trackToPlay);
+      } else {
+        await audioEngine.play(track);
+      }
+    }
     setIsPlaying(true);
 
     if (fromPlaylistId) {
@@ -529,9 +539,13 @@ export default function App() {
       if (!audioData && currentTrack.audioUrl) {
         audioData = await downloadAndCacheAudio(currentTrack.id, currentTrack.audioUrl);
       }
-      const audio = audioData || currentTrack.audioFile;
-      const trackToPlay = audio ? { ...currentTrack, audioFile: audio } : currentTrack;
-      await audioEngine.play(trackToPlay);
+      if (audioData) {
+        await audioEngine.play({ ...currentTrack, audioFile: audioData });
+      } else if (currentTrack.audioUrl) {
+        await audioEngine.play({ ...currentTrack, audioFile: currentTrack.audioUrl });
+      } else {
+        await audioEngine.play(currentTrack);
+      }
       return;
     } else if (shuffle) {
       const randomIndex = Math.floor(Math.random() * activeTrackIds.length);
