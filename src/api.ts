@@ -102,11 +102,13 @@ export async function createTrack(track: Track, userEmail?: string): Promise<Tra
       album: track.album || "",
       cover: track.cover || "",
       duration: track.duration || 0,
+      synthGenre: track.synthGenre || "electronic",
+      liked: track.liked || false,
+      isPodcast: track.isPodcast || false,
+      audio_url: track.audioUrl || null,
+      user_email: userEmail || null,
     };
     if (track.lyrics) row.lyrics = track.lyrics;
-    if (track.liked) row.liked = true;
-    if (track.audioUrl) row.audio_url = track.audioUrl;
-    if (userEmail) row.user_email = userEmail;
 
     console.log("[SpotifyClone] Salvando faixa no Supabase:", row);
 
