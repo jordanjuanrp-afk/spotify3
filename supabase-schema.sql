@@ -1,3 +1,6 @@
+-- Execute este SQL no Supabase Dashboard > SQL Editor
+
+-- 1. Criar tabela tracks (se não existir)
 create table if not exists tracks (
   id text primary key,
   title text not null,
@@ -5,15 +8,24 @@ create table if not exists tracks (
   album text not null default '',
   cover text not null default '',
   duration integer not null default 0,
-  synthGenre text not null default 'electronic',
   lyrics jsonb,
   liked boolean default false,
-  isPodcast boolean default false,
-  audio_file text,
   audio_url text,
   user_email text
 );
 
+-- 2. Adicionar colunas que podem não existir (ignora erro se já existir)
+do $$ begin
+  alter table tracks add column synthGenre text not null default 'electronic';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table tracks add column isPodcast boolean default false;
+exception when duplicate_column then null;
+end $$;
+
+-- 3. Criar tabela playlists (se não existir)
 create table if not exists playlists (
   id text primary key,
   name text not null,
@@ -24,27 +36,45 @@ create table if not exists playlists (
   user_email text
 );
 
+-- 4. Habilitar RLS (Row Level Security)
 alter table tracks enable row level security;
 alter table playlists enable row level security;
 
-create policy "Public read" on tracks for select using (true);
-create policy "Public insert" on tracks for insert with check (true);
-create policy "Public update" on tracks for update using (true);
-create policy "Public delete" on tracks for delete using (true);
+-- 5. Políticas de acesso público (qualquer um pode ler, escrever, atualizar, deletar)
+do $$ begin
+  create policy "Public read" on tracks for select using (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public insert" on tracks for insert with check (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public update" on tracks for update using (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public delete" on tracks for delete using (true);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Public read" on playlists for select using (true);
-create policy "Public insert" on playlists for insert with check (true);
-create policy "Public update" on playlists for update using (true);
-create policy "Public delete" on playlists for delete using (true);
+do $$ begin
+  create policy "Public read" on playlists for select using (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public insert" on playlists for insert with check (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public update" on playlists for update using (true);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create policy "Public delete" on playlists for delete using (true);
+exception when duplicate_object then null;
+end $$;
 
--- Supabase Storage: create 'audio' bucket (run in Supabase Dashboard > Storage)
--- insert into storage.buckets (id, name, public) values ('audio', 'audio', true);
-
--- Storage policy: allow public read
--- create policy "Public read audio" on storage.objects for select using (bucket_id = 'audio');
-
--- Storage policy: allow authenticated insert
--- create policy "Anyone can upload audio" on storage.objects for insert with check (bucket_id = 'audio');
-
--- Storage policy: allow delete
--- create policy "Anyone can delete audio" on storage.objects for delete using (bucket_id = 'audio');
+-- 6. Criar bucket de áudio no Storage (se não existir)
+-- Execute manualmente no Supabase Dashboard > Storage > New Bucket:
+-- Nome: audio | Public: true
